@@ -1,0 +1,5 @@
+S .
+
+B _build
+
+PKG dynlink camlp4.lib ulex unix num str pcre expat pxp curl cduce
