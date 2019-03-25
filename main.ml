@@ -9,4 +9,8 @@ let _ =
     let beta_list = mk_list (cons beta) in
     let beta_list_list = mk_list beta_list in
     let union = cup (descr alpha_list) (descr beta_list_list) in
-    printf union
+    let record = mk_record true [("al",alpha_list);("bl",beta_list);("al_bll_union", cons union)] in
+    Utils.print_type record ;
+    let record' = mk_record true [("al",beta_list)] in
+    let inter = cap record record' in
+    Utils.print_type inter
