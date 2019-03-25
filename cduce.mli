@@ -11,6 +11,11 @@ val string_of_node : node -> string
 val descr : node -> typ
 val cons : typ -> node
 
+val any : typ
+val empty : typ
+val any_node : node
+val empty_node : node
+
 val cup : typ -> typ -> typ
 val cap : typ -> typ -> typ
 

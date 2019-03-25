@@ -15,6 +15,12 @@ let descr = CD.Types.descr
 let cons = CD.Types.cons
 
 
+let any = CD.Types.any
+let empty = CD.Types.empty
+let any_node = CD.Types.any_node
+let empty_node = CD.Types.empty_node
+
+
 let cup = CD.Types.cup
 let cap = CD.Types.cap
 

@@ -1,5 +1,6 @@
 
 open Cduce
+open Types_additions
 
 let alpha = mk_var false "a"
 let beta  = mk_var false "b"
@@ -26,4 +27,6 @@ let _ =
     let f = cap f1 f2 in
     Utils.print_type f ;
     Utils.print_type (domain f) ;
-    Utils.print_type (apply f int_t)
+    Utils.print_type (apply f int_t) ;
+    (* Test custom operators *)
+    Utils.print_type (square f int_t)
