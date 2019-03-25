@@ -56,6 +56,7 @@ let all_fields record =
     List.map from_label (LabelSet.get lbls)
 
 
+(* Maybe not optimised (if no memoisation for Arrow.get). We'll see that later. *)
 let mk_arrow = CD.Types.arrow
 
 let domain t =
@@ -65,6 +66,9 @@ let domain t =
 let apply t args =
     let t = CD.Types.Arrow.get t in
     CD.Types.Arrow.apply t args
+
+let dnf t =
+    snd (CD.Types.Arrow.get t)
 
 
 let is_empty = CD.Types.is_empty
