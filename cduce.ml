@@ -32,11 +32,6 @@ let mk_var internal name =
 let mk_atom ascii_name =
     ascii_name |> CD.Atoms.V.mk_ascii |> CD.Atoms.atom |> CD.Types.atom
 
-let mk_record opened fields =
-    let fields = List.map (fun (str,node) -> (to_label str,node)) fields in
-    let fields = LabelMap.from_list_disj fields in
-    CD.Types.record_fields (opened, fields)
-
 let mk_list alpha =
     let alpha_list = CD.Types.make () in
 
@@ -48,6 +43,11 @@ let mk_list alpha =
     alpha_list
 
 
+let mk_record opened fields =
+    let fields = List.map (fun (str,node) -> (to_label str,node)) fields in
+    let fields = LabelMap.from_list_disj fields in
+    CD.Types.record_fields (opened, fields)
+
 let get_field record field =
     CD.Types.Record.project record (to_label field)
 
@@ -55,7 +55,18 @@ let all_fields record =
     let lbls = CD.Types.Record.all_labels record in
     List.map from_label (LabelSet.get lbls)
 
-    
+
+let mk_arrow = CD.Types.arrow
+
+let domain t =
+    let t = CD.Types.Arrow.get t in
+    CD.Types.Arrow.domain t
+
+let apply t args =
+    let t = CD.Types.Arrow.get t in
+    CD.Types.Arrow.apply t args
+
+
 let is_empty = CD.Types.is_empty
 let non_empty = CD.Types.non_empty
 let subtype = CD.Types.subtype

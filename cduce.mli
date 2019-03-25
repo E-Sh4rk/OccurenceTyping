@@ -16,11 +16,15 @@ val cap : typ -> typ -> typ
 
 val mk_var : bool -> string -> typ
 val mk_atom : string -> typ
-val mk_record : bool -> (string * node) list -> typ
 val mk_list: node -> node
 
+val mk_record : bool -> (string * node) list -> typ
 val get_field : typ -> string -> typ
 val all_fields : typ -> string list
+
+val mk_arrow : node -> node -> typ
+val domain : typ -> typ
+val apply : typ -> typ -> typ
 
 val is_empty : typ -> bool
 val non_empty: typ -> bool
