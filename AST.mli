@@ -20,6 +20,11 @@ type dir =
 
 type path = dir list
 
+module Expr : sig
+    type t = expr
+    val compare : t -> t -> int
+    val equiv : t -> t -> bool
+end
 module ExprMap : Map.S with type key = expr
 
 exception Invalid_path

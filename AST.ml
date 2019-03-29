@@ -20,7 +20,11 @@ type dir =
 
 type path = dir list
 
-module Expr = struct type t = expr let compare = compare end
+module Expr = struct
+    type t = expr
+    let compare = compare
+    let equiv t1 t2 = (compare t1 t2) = 0
+end
 module ExprMap = Map.Make(Expr)
 
 exception Invalid_path
