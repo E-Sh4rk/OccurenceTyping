@@ -2,9 +2,9 @@
 type typ = Cduce.typ
 
 type const =
-    | CBool of bool
-    | CInt of int
-    | CString of string
+    | Bool of bool
+    | Int of int
+    | Char of string
 
 type var = string
 

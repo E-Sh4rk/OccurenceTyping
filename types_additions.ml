@@ -41,7 +41,15 @@ and back_typeof env e t p =
     back_typeof_rev env e t (List.rev p)
 
 and typeof env e =
-    failwith "TODO"
+    match ExprMap.find_opt e env with
+    | Some t -> t
+    | None ->
+    begin match e with
+        | Const (Bool _) -> bool_typ
+        | Const (Int _) -> int_typ
+        | Const (Char _) -> char_typ
+        | _ -> failwith "TODO"
+    end
 
 and refine_env env e t =
     let paths = all_paths_for_expr [] e in

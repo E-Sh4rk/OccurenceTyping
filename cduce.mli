@@ -16,6 +16,12 @@ val empty : typ
 val any_node : node
 val empty_node : node
 
+val true_typ : typ
+val false_typ : typ
+val bool_typ : typ
+val int_typ : typ
+val char_typ : typ
+
 val cup : typ -> typ -> typ
 val cap : typ -> typ -> typ
 

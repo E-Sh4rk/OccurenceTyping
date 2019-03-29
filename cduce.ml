@@ -82,3 +82,10 @@ let non_empty = CD.Types.non_empty
 let subtype = CD.Types.subtype
 let disjoint = CD.Types.disjoint
 let equiv = CD.Types.equiv
+
+
+let true_typ = mk_atom "true"
+let false_typ = mk_atom "false"
+let bool_typ = cup true_typ false_typ
+let int_typ = CD.Types.Int.any
+let char_typ = CD.Types.Char.any
