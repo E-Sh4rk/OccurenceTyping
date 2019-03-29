@@ -19,3 +19,15 @@ type dir =
     | LApp | RApp
 
 type path = dir list
+
+module Expr = struct type t = expr let compare = compare end
+module ExprMap = Map.Make(Expr)
+
+exception Invalid_path
+
+let rec follow_path e p =
+    match e, p with
+    | e, [] -> e
+    | App (e,_), LApp::p
+    | App (_,e), RApp::p -> follow_path e p
+    | _ -> raise Invalid_path
