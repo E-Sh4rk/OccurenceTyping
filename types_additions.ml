@@ -4,6 +4,9 @@ open Ast
 
 type env = typ ExprMap.t
 
+let conj ts = List.fold_left cap any ts
+let disj ts = List.fold_left cup empty ts
+
 let square f out =
     let dnf = dnf f in
     let res = dnf |> List.map begin
@@ -16,6 +19,8 @@ let square f out =
     end in
     let res = List.fold_left cup empty res in
     cap (domain f) res
+
+exception Ill_typed
 
 let rec all_paths_for_expr rev_prefix e =
     match e with
@@ -48,6 +53,26 @@ and typeof env e =
         | Const (Bool _) -> bool_typ
         | Const (Int _) -> int_typ
         | Const (Char _) -> char_typ
+        | Lambda (t,v,e) ->
+            let dnf = dnf t in
+            let rec valid_types acc dnf = match dnf with
+            | [] -> acc
+            | ts::dnf ->
+                let is_valid (s,t) =
+                    let new_env = ExprMap.add (Var v) s env in
+                    subtype (typeof new_env e) t
+                in
+                if List.for_all is_valid ts then
+                    let fs = List.map (fun (s,t) -> mk_arrow (cons s) (cons t)) ts in
+                    valid_types ((conj fs)::acc) dnf
+                else valid_types acc dnf
+            in
+            let ts = valid_types [] dnf in
+            if ts = [] then raise Ill_typed else conj ts
+        | App (e1, e2) ->
+            let t1 = typeof env e1 in
+            let t2 = typeof env e2 in
+            apply t1 t2
         | _ -> failwith "TODO"
     end
 
