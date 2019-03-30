@@ -23,6 +23,7 @@ let empty_node = CD.Types.empty_node
 
 let cup = CD.Types.cup
 let cap = CD.Types.cap
+let neg = CD.Types.neg
 
 (* ----- *)
 

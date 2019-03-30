@@ -24,6 +24,7 @@ val char_typ : typ
 
 val cup : typ -> typ -> typ
 val cap : typ -> typ -> typ
+val neg : typ -> typ
 
 val mk_var : bool -> string -> typ
 val mk_atom : string -> typ

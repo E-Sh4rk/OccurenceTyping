@@ -73,7 +73,14 @@ and typeof env e =
             let t1 = typeof env e1 in
             let t2 = typeof env e2 in
             apply t1 t2
-        | _ -> failwith "TODO"
+        | Ite (e,t,e1,e2) ->
+            let t0 = typeof env e in
+            let env1 = refine_env env e (cap t0 t) in
+            let env2 = refine_env env e (cap t0 (neg t)) in
+            let t1 = typeof env1 e1 in
+            let t2 = typeof env2 e2 in
+            cup t1 t2
+        | Var _ -> failwith "Unknown variable type..."
     end
 
 and refine_env env e t =
