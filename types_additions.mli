@@ -2,6 +2,7 @@
 open Ast
 
 type env = typ ExprMap.t
+val empty_env : env
 
 val conj : typ list -> typ
 val disj : typ list -> typ

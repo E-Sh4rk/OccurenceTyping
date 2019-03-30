@@ -3,6 +3,7 @@ open Cduce
 open Ast
 
 type env = typ ExprMap.t
+let empty_env = ExprMap.empty
 
 let conj ts = List.fold_left cap any ts
 let disj ts = List.fold_left cup empty ts
@@ -54,6 +55,7 @@ and typeof env e =
     | Some t -> t
     | None ->
     begin match e with
+        | Const Magic -> empty
         | Const (Bool _) -> bool_typ
         | Const (Int _) -> int_typ
         | Const (Char _) -> char_typ

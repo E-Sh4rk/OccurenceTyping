@@ -2,6 +2,7 @@
 type typ = Cduce.typ
 
 type const =
+    | Magic
     | Bool of bool
     | Int of int
     | Char of string

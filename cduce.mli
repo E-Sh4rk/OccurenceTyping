@@ -30,6 +30,10 @@ val mk_var : bool -> string -> typ
 val mk_atom : string -> typ
 val mk_list: node -> node
 
+val mk_times : node -> node -> typ
+val pi1 : typ -> typ
+val pi2 : typ -> typ
+
 val mk_record : bool -> (string * node) list -> typ
 val get_field : typ -> string -> typ
 val all_fields : typ -> string list

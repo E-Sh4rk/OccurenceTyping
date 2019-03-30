@@ -50,6 +50,15 @@ let mk_list alpha =
     alpha_list
 
 
+let mk_times = CD.Types.times
+
+let pi1 t =
+    CD.Types.Product.pi1 (CD.Types.Product.get t)
+
+let pi2 t =
+    CD.Types.Product.pi2 (CD.Types.Product.get t)
+
+
 let mk_record opened fields =
     let fields = List.map (fun (str,node) -> (to_label str,node)) fields in
     let fields = LabelMap.from_list_disj fields in
