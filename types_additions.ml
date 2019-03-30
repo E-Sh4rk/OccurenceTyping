@@ -28,6 +28,7 @@ let rec all_paths_for_expr rev_prefix e =
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         p1@p2
+    | Let (v,e1,e2) -> all_paths_for_expr ((RLet (v,e1))::rev_prefix) e2
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
 let rec back_typeof_rev env e t p =
@@ -41,6 +42,9 @@ let rec back_typeof_rev env e t p =
         let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
         let out_typ = back_typeof_rev env e t p in
         square f_typ out_typ
+    | (RLet(v,ve))::p ->
+        let env = ExprMap.add (Var v) (typeof env ve) env in
+        back_typeof_rev env e t p
 
 and back_typeof env e t p =
     back_typeof_rev env e t (List.rev p)
@@ -80,6 +84,9 @@ and typeof env e =
             let t1 = typeof env1 e1 in
             let t2 = typeof env2 e2 in
             cup t1 t2
+        | Let (v, e1, e2) ->
+            let env = ExprMap.add (Var v) (typeof env e1) env in
+            typeof env e2
         | Var _ -> failwith "Unknown variable type..."
     end
 

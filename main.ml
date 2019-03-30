@@ -30,3 +30,5 @@ let _ =
     Utils.print_type (apply f int_t) ;
     (* Test custom operators *)
     Utils.print_type (square f int_t)
+    (* Occurence typing *)
+    (* TODO *)

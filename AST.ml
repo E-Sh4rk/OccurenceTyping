@@ -14,9 +14,10 @@ type expr =
     | Lambda of typ * var * expr
     | Ite of expr * typ * expr * expr
     | App of expr * expr
+    | Let of var * expr * expr
 
 type dir =
-    | LApp | RApp
+    | LApp | RApp | RLet of var * expr
 
 type path = dir list
 
@@ -34,4 +35,5 @@ let rec follow_path e p =
     | e, [] -> e
     | App (e,_), LApp::p
     | App (_,e), RApp::p -> follow_path e p
+    | Let (_,_,e), (RLet _)::p -> follow_path e p
     | _ -> raise Invalid_path

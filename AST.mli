@@ -14,9 +14,10 @@ type expr =
     | Lambda of typ * var * expr
     | Ite of expr * typ * expr * expr
     | App of expr * expr
+    | Let of var * expr * expr
 
 type dir =
-    | LApp | RApp
+    | LApp | RApp | RLet of var * expr
 
 type path = dir list
 
