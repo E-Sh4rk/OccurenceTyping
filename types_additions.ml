@@ -28,8 +28,10 @@ let rec all_paths_for_expr rev_prefix e =
     | App (e1, e2) ->
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
-        p1@p2
-    | Let (v,e1,e2) -> all_paths_for_expr ((RLet (v,e1))::rev_prefix) e2
+        (List.rev rev_prefix)::(p1@p2)
+    | Let (v,e1,e2) ->
+        let p = all_paths_for_expr ((RLet (v,e1))::rev_prefix) e2 in
+        (List.rev rev_prefix)::p
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
 let rec back_typeof_rev env e t p =
