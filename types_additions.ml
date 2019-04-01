@@ -2,6 +2,21 @@
 open Cduce
 open Ast
 
+type dir =
+    | LApp | RApp | RLet of varid * expr
+
+type path = dir list
+
+exception Invalid_path
+
+let rec follow_path e p =
+    match e, p with
+    | e, [] -> e
+    | App (e,_), LApp::p
+    | App (_,e), RApp::p -> follow_path e p
+    | Let (v,e1,e2), (RLet _)::p -> follow_path (substitute_var v e1 e2) p
+    | _ -> raise Invalid_path
+
 type env = typ ExprMap.t
 let empty_env = ExprMap.empty
 
@@ -30,10 +45,12 @@ let rec all_paths_for_expr rev_prefix e =
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
     | Let (v,e1,e2) ->
-        let p = all_paths_for_expr ((RLet (v,e1))::rev_prefix) e2 in
+        let p = all_paths_for_expr (RLet(v,e1)::rev_prefix) e2 in
         (List.rev rev_prefix)::p
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
+(* TODO: Add memoisation *)
+(* TODO: Do substitution only once *)
 let rec back_typeof_rev env e t p =
     match p with
     | [] -> t
@@ -45,9 +62,8 @@ let rec back_typeof_rev env e t p =
         let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
         let out_typ = back_typeof_rev env e t p in
         square f_typ out_typ
-    | (RLet(v,ve))::p ->
-        let env = ExprMap.add (Var v) (typeof env ve) env in
-        back_typeof_rev env e t p
+    | RLet(v,e1)::p ->
+        back_typeof_rev env (substitute_var v e1 e) t p
 
 and back_typeof env e t p =
     back_typeof_rev env e t (List.rev p)
@@ -89,8 +105,8 @@ and typeof env e =
             let t2 = typeof env2 e2 in
             cup t1 t2
         | Let (v, e1, e2) ->
-            let env = ExprMap.add (Var v) (typeof env e1) env in
-            typeof env e2
+            let env = ExprMap.add e1 (typeof env e1) env in
+            typeof env (substitute_var v e1 e2)
         | Var _ -> failwith "Unknown variable type..."
     end
 

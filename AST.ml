@@ -21,11 +21,6 @@ type 'var expr' =
 type parser_expr = varname expr'
 type expr = varid expr'
 
-type dir =
-    | LApp | RApp | RLet of varid * expr
-
-type path = dir list
-
 let rec make_lambda_abstraction vars t e =
     match vars with
     | [] -> e
@@ -70,12 +65,14 @@ let parser_expr_to_expr e =
     in
     aux StrMap.empty e
 
-exception Invalid_path
-
-let rec follow_path e p =
-    match e, p with
-    | e, [] -> e
-    | App (e,_), LApp::p
-    | App (_,e), RApp::p -> follow_path e p
-    | Let (_,_,e), (RLet _)::p -> follow_path e p
-    | _ -> raise Invalid_path
+let rec substitute_var v ve e =
+    match e with
+    | Const c -> Const c
+    | Var v' when v=v' -> ve
+    | Var v' -> Var v'
+    | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
+    | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
+    | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
+    | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
+    | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
+    | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)

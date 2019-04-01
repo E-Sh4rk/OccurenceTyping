@@ -21,11 +21,6 @@ type 'var expr' =
 type parser_expr = varname expr'
 type expr = varid expr'
 
-type dir =
-    | LApp | RApp | RLet of varid * expr
-
-type path = dir list
-
 val make_lambda_abstraction : 'a list -> typ -> 'a expr' -> 'a expr'
 
 module Expr : sig
@@ -39,6 +34,4 @@ val unique_varid : unit -> varid
 
 val parser_expr_to_expr : parser_expr -> expr
 
-exception Invalid_path
-
-val follow_path : expr -> path -> expr
+val substitute_var : 'a -> 'a expr' -> 'a expr' -> 'a expr'
