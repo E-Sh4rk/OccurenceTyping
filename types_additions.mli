@@ -16,7 +16,7 @@ val empty_env : env
 val conj : typ list -> typ
 val disj : typ list -> typ
 
-val square : typ -> typ -> typ
+val square : typ -> typ -> typ (* Does not work with polymorphism yet *)
 
 exception Ill_typed
 

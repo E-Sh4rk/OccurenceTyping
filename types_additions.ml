@@ -28,7 +28,7 @@ let square f out =
         fun lst ->
             let res = lst |> List.map begin
                 fun (s,t) ->
-                    if is_empty (cap out t) then empty else s
+                    if is_empty (cap out t) then empty else s (* if polymorphism: s should be refined... *)
             end in
             List.fold_left cup empty res
     end in
@@ -63,21 +63,32 @@ let rec all_paths_for_expr rev_prefix e =
     | Let _ -> failwith "Let bindings in tests must be eliminated before back-typing!"
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
-(* TODO: Add memoisation *)
-let rec back_typeof_rev env e t p =
-    match p with
-    | [] -> t
-    | LApp::p ->
-        let dom = typeof env (follow_path e (List.rev (RApp::p))) in
-        let codom = back_typeof_rev env e t p in
-        mk_arrow (cons dom) (cons codom)
-    | RApp::p ->
-        let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
-        let out_typ = back_typeof_rev env e t p in
-        square f_typ out_typ
+module PathMap = Map.Make(struct type t = path let compare = compare end)
+
+let rec back_typeof_rev memo env e t p =
+    if Hashtbl.mem memo p then Hashtbl.find memo p
+    else begin
+        let res = match p with
+        | [] -> t
+        | LApp::p ->
+            let dom = typeof env (follow_path e (List.rev (RApp::p))) in
+            let codom = back_typeof_rev memo env e t p in
+            mk_arrow (cons dom) (cons codom)
+        | RApp::p ->
+            let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
+            let out_typ = back_typeof_rev memo env e t p in
+            square f_typ out_typ
+        in
+        Hashtbl.replace memo p res ;
+        res
+    end
 
 and back_typeof env e t p =
-    back_typeof_rev env e t (List.rev p)
+    back_typeof_rev (Hashtbl.create 10) env e t (List.rev p)
+
+and optimized_back_typeof env e t ps =
+    let memo = Hashtbl.create (List.length ps) in
+    List.map (fun p -> back_typeof_rev memo env e t (List.rev p)) ps
 
 and typeof env e =
     match ExprMap.find_opt e env with
@@ -124,6 +135,9 @@ and typeof env e =
 and refine_env env e t =
     let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
+    (* Deduce a type for each path *)
+    let paths_t = optimized_back_typeof env e t paths in
+    let paths_t = List.fold_left2 (fun acc p t -> PathMap.add p t acc) PathMap.empty paths paths_t in 
     (* Build a map from sub-expressions (occurrences) to paths *)
     let add_path acc p =
         let e = follow_path e p in
@@ -137,7 +151,7 @@ and refine_env env e t =
     let refine_for_expr acc (e', paths) =
         let old_type = typeof env e' in
         let refine acc p =
-            cap acc (back_typeof env e t p)
+            cap acc (PathMap.find p paths_t)
         in
         let new_type = List.fold_left refine old_type paths in
         ExprMap.add e' new_type acc
