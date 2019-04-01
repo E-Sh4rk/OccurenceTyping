@@ -2,7 +2,7 @@
 open Ast
 
 type dir =
-    | LApp | RApp | RLet of varid * expr
+    | LApp | RApp
 
 type path = dir list
 

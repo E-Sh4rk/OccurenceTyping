@@ -3,7 +3,7 @@ open Cduce
 open Ast
 
 type dir =
-    | LApp | RApp | RLet of varid * expr
+    | LApp | RApp
 
 type path = dir list
 
@@ -14,7 +14,6 @@ let rec follow_path e p =
     | e, [] -> e
     | App (e,_), LApp::p
     | App (_,e), RApp::p -> follow_path e p
-    | Let (v,e1,e2), (RLet _)::p -> follow_path (substitute_var v e1 e2) p
     | _ -> raise Invalid_path
 
 type env = typ ExprMap.t
@@ -38,19 +37,33 @@ let square f out =
 
 exception Ill_typed
 
+module IntMap = Map.Make(struct type t = int let compare = compare end)
+
+let eliminate_all_lets e =
+    let rec aux env e =
+        match e with
+        | Const c -> Const c
+        | Var v when IntMap.mem v env -> IntMap.find v env
+        | Var v -> Var v
+        | Lambda (t, v, e) -> Lambda (t, v, aux (IntMap.remove v env) e)
+        | Ite (e, t, e1, e2) -> Ite (aux env e, t, aux env e1, aux env e2)
+        | App (e1, e2) -> App (aux env e1, aux env e2)
+        | Let (v, e1, e2) ->
+            let e1 = aux env e1 in
+            Let (v, e1, aux (IntMap.add v e1 env) e2)
+    in
+    aux IntMap.empty e
+
 let rec all_paths_for_expr rev_prefix e =
     match e with
     | App (e1, e2) ->
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
-    | Let (v,e1,e2) ->
-        let p = all_paths_for_expr (RLet(v,e1)::rev_prefix) e2 in
-        (List.rev rev_prefix)::p
+    | Let _ -> failwith "Let bindings in tests must be eliminated before back-typing!"
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
 (* TODO: Add memoisation *)
-(* TODO: Do substitution only once *)
 let rec back_typeof_rev env e t p =
     match p with
     | [] -> t
@@ -62,8 +75,6 @@ let rec back_typeof_rev env e t p =
         let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
         let out_typ = back_typeof_rev env e t p in
         square f_typ out_typ
-    | RLet(v,e1)::p ->
-        back_typeof_rev env (substitute_var v e1 e) t p
 
 and back_typeof env e t p =
     back_typeof_rev env e t (List.rev p)
@@ -111,6 +122,7 @@ and typeof env e =
     end
 
 and refine_env env e t =
+    let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
     (* Build a map from sub-expressions (occurrences) to paths *)
     let add_path acc p =
