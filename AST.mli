@@ -5,7 +5,7 @@ type const =
     | Magic
     | Bool of bool
     | Int of int
-    | Char of string
+    | Char of char
 
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
@@ -25,6 +25,8 @@ type dir =
     | LApp | RApp | RLet of varid * expr
 
 type path = dir list
+
+val make_lambda_abstraction : 'a list -> typ -> 'a expr' -> 'a expr'
 
 module Expr : sig
     type t = expr

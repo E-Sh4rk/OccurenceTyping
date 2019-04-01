@@ -1,6 +1,6 @@
 
 all:
-	ocamlbuild -use-ocamlfind main.native
+	ocamlbuild -use-ocamlfind -use-menhir main.native
 
 test:
 	./main.native

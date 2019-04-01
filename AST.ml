@@ -5,7 +5,7 @@ type const =
     | Magic
     | Bool of bool
     | Int of int
-    | Char of string
+    | Char of char
 
 type varname = string
 type varid = int
@@ -25,6 +25,14 @@ type dir =
     | LApp | RApp | RLet of varid * expr
 
 type path = dir list
+
+let rec make_lambda_abstraction vars t e =
+    match vars with
+    | [] -> e
+    | [x] -> Lambda (t,x,e)
+    | x::vars ->
+        let new_t = Cduce.apply t (Cduce.domain t) in
+        Lambda (t,x,make_lambda_abstraction vars new_t e)
 
 module Expr = struct
     type t = expr
