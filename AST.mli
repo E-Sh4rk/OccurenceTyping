@@ -7,18 +7,22 @@ type const =
     | Int of int
     | Char of string
 
-type var = string
+type varname = string
+type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
-type expr =
+type 'var expr' =
     | Const of const
-    | Var of var
-    | Lambda of typ * var * expr
-    | Ite of expr * typ * expr * expr
-    | App of expr * expr
-    | Let of var * expr * expr
+    | Var of 'var
+    | Lambda of typ * 'var * 'var expr'
+    | Ite of 'var expr' * typ * 'var expr' * 'var expr'
+    | App of 'var expr' * 'var expr'
+    | Let of 'var * 'var expr' * 'var expr'
+
+type parser_expr = varname expr'
+type expr = varid expr'
 
 type dir =
-    | LApp | RApp | RLet of var * expr
+    | LApp | RApp | RLet of varid * expr
 
 type path = dir list
 
@@ -28,6 +32,10 @@ module Expr : sig
     val equiv : t -> t -> bool
 end
 module ExprMap : Map.S with type key = expr
+
+val unique_varid : unit -> varid
+
+val parser_expr_to_expr : parser_expr -> expr
 
 exception Invalid_path
 

@@ -64,5 +64,5 @@ let _ =
     (* Test custom operators *)
     Utils.print_type (square f int_t) ;
     (* Occurence typing *)
-    Utils.print_type (typeof empty_env wt_ast) ;
-    Utils.print_type (typeof empty_env it_ast)
+    Utils.print_type (typeof empty_env (parser_expr_to_expr wt_ast)) ;
+    Utils.print_type (typeof empty_env (parser_expr_to_expr it_ast))
