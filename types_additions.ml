@@ -65,29 +65,41 @@ let rec all_paths_for_expr rev_prefix e =
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
-let rec back_typeof_rev memo env e t p =
-    if Hashtbl.mem memo p then Hashtbl.find memo p
-    else begin
-        let res = match p with
-        | [] -> t
-        | LApp::p ->
-            let dom = typeof env (follow_path e (List.rev (RApp::p))) in
-            let codom = back_typeof_rev memo env e t p in
-            mk_arrow (cons dom) (cons codom)
-        | RApp::p ->
-            let f_typ = typeof env (follow_path e (List.rev (LApp::p))) in
-            let out_typ = back_typeof_rev memo env e t p in
-            square f_typ out_typ
-        in
-        Hashtbl.replace memo p res ;
-        res
-    end
+let rec back_typeof_rev (memo_t,memo_bt) env e t p =
+    let typeof p =
+        if Hashtbl.mem memo_t p then Hashtbl.find memo_t p
+        else begin
+            let res = typeof env (follow_path e (List.rev p)) in
+            Hashtbl.replace memo_t p res ;
+            res
+        end
+    in
+    let rec aux p =
+        if Hashtbl.mem memo_bt p then Hashtbl.find memo_bt p
+        else begin
+            let res = match p with
+            | [] -> t
+            | LApp::p ->
+                let dom = typeof (RApp::p) in
+                let codom = aux p in
+                mk_arrow (cons dom) (cons codom)
+            | RApp::p ->
+                let f_typ = typeof (LApp::p) in
+                let out_typ = aux p in
+                square f_typ out_typ
+            in
+            Hashtbl.replace memo_bt p res ;
+            res
+        end
+    in aux p
 
 and back_typeof env e t p =
-    back_typeof_rev (Hashtbl.create 10) env e t (List.rev p)
+    let memo = (Hashtbl.create 10, Hashtbl.create 10) in
+    back_typeof_rev memo env e t (List.rev p)
 
 and optimized_back_typeof env e t ps =
-    let memo = Hashtbl.create (List.length ps) in
+    let n = List.length ps in
+    let memo = (Hashtbl.create n, Hashtbl.create n) in
     List.map (fun p -> back_typeof_rev memo env e t (List.rev p)) ps
 
 and typeof env e =
