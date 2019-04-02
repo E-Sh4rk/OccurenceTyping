@@ -103,6 +103,16 @@ let rec back_typeof_rev (memo_t,memo_bt) env e t p =
                 let f_typ = typeof (LApp::p) in
                 let out_typ = aux p in
                 square f_typ out_typ
+            | LPair::p ->
+                let typeof_pair = mk_times any_node any_node(*(cons (typeof (RPair::p)))*) in
+                let pair = cap (aux p) typeof_pair in
+                pi1 pair
+            | RPair::p ->
+                let typeof_pair = mk_times any_node(*(cons (typeof (LPair::p)))*) any_node in
+                let pair = cap (aux p) typeof_pair in
+                pi2 pair
+            | PFst::p -> mk_times (cons (aux p)) any_node
+            | PSnd::p -> mk_times any_node (cons (aux p))
             in
             Hashtbl.replace memo_bt p res ;
             res
@@ -146,7 +156,7 @@ and typeof env e =
         | App (e1, e2) ->
             let t1 = typeof env e1 in
             let t2 = typeof env e2 in
-            apply t1 t2
+            if subtype t2 (domain t1) then apply t1 t2 else raise Ill_typed
         | Ite (e,t,e1,e2) ->
             let t0 = typeof env e in
             let env1 = refine_env env e (cap t0 t) in
@@ -158,6 +168,16 @@ and typeof env e =
             let env = ExprMap.add e1 (typeof env e1) env in
             typeof env (substitute_var v e1 e2)
         | Var _ -> failwith "Unknown variable type..."
+        | Pair (e1, e2) ->
+            let t1 = typeof env e1 in
+            let t2 = typeof env e2 in
+            mk_times (cons t1) (cons t2)
+        | Projection (Fst, e) ->
+            let t = typeof env e in
+            if subtype t pair_any then pi1 t else raise Ill_typed
+        | Projection (Snd, e) ->
+            let t = typeof env e in
+            if subtype t pair_any then pi2 t else raise Ill_typed
     end
 
 and refine_env env e t =
