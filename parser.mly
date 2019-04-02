@@ -14,25 +14,22 @@
      | Id "neg" -> Primitive Neg*)
      | x -> Var x
 
-   (*let last xs = List.(hd (rev xs))
-
    let rec tuple = function
      | [] -> assert false
      | [x] -> x
      | x :: xs -> Pair (tuple xs, x)
-     )
 
-   let tuple xs = tuple (List.rev xs)*)
+   let tuple xs = tuple (List.rev xs)
 
 %}
 
 %token EOF
-%token FUN LET IN (*FST SND*)
+%token FUN LET IN FST SND
 %token IF IS THEN ELSE
-%token LPAREN RPAREN COLON EQUAL (*COMMA*)
+%token LPAREN RPAREN COLON EQUAL COMMA
 %token ARROW AND OR NEG
 %token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE
-(*%token TIMES PLUS MINUS*)
+%token TIMES (*PLUS MINUS*)
 %token<string> ID
 (*%token<float> LFLOAT*)
 %token<int> LINT
@@ -47,8 +44,8 @@
 %right ARROW (*IN*)
 %left OR
 %left AND
-(*%left PLUS
-%left TIMES*)
+(*%left PLUS*)
+%left TIMES
 %nonassoc NEG
 
 %%
@@ -69,16 +66,15 @@ term:
 
 simple_term:
   a=simple_term b=atomic_term { App (a, b) }
-(*| FST a=atomic_term { Fst a }
-| SND a=atomic_term { Snd a }*)
+| FST a=atomic_term { Projection (Fst, a) }
+| SND a=atomic_term { Projection (Snd, a) }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
 atomic_term:
   x=identifier { var_or_primitive x }
 | l=literal { Const l }
-(*| LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }*)
-| LPAREN t=term RPAREN { t }
+| LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }
 
 literal:
 (*f=LFLOAT { Float f }*)
@@ -106,10 +102,8 @@ identifier: x=ID { x }
 typ:
   x=type_constant { x }
 | lhs=typ ARROW rhs=typ
-{
-  Cduce.mk_arrow (Cduce.cons lhs) (Cduce.cons rhs)
-}
-(*| lhs=typ TIMES rhs=typ { TyPair (lhs, rhs) }*)
+  { Cduce.mk_arrow (Cduce.cons lhs) (Cduce.cons rhs) }
+| lhs=typ TIMES rhs=typ { Cduce.mk_times (Cduce.cons lhs) (Cduce.cons rhs) }
 | NEG t=typ { Cduce.neg t }
 | lhs=typ AND rhs=typ { Cduce.cap lhs rhs }
 | lhs=typ OR rhs=typ  { Cduce.cup lhs rhs }

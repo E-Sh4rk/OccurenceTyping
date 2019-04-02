@@ -27,7 +27,7 @@ rule token = parse
 | "|"     { OR  }
 | "~"     { NEG  }
 | ":"     { COLON }
-(*| ","     { COMMA }*)
+| ","     { COMMA }
 | "="     { EQUAL }
 | "if"    { IF }
 | "is"    { IS }
@@ -36,8 +36,8 @@ rule token = parse
 | "fun"   { FUN }
 | "let"   { LET }
 | "in"    { IN }
-(*| "fst"   { FST }
-| "snd"   { SND }*)
+| "fst"   { FST }
+| "snd"   { SND }
 | "Any"   { ANY }
 | "Empty" { EMPTY }
 | "Bool"  { BOOL }
@@ -48,8 +48,8 @@ rule token = parse
 | "False" { FALSE }
 | "("     { LPAREN }
 | ")"     { RPAREN }
-(*| "*"     { TIMES }
-| "-"     { MINUS }
+| "*"     { TIMES }
+(*| "-"     { MINUS }
 | "+"     { PLUS  }*)
 | "magic" { MAGIC }
 | decimal as i { LINT (int_of_string i) }
