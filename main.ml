@@ -40,11 +40,11 @@ let _ =
     let program = Parsing.parse_program_file !fn in
     let test_def ctx (name,parsed_expr) =
       let parsed_expr = substitute_var ":tmp:" parsed_expr ctx in
-      let ctx = substitute_var ":tmp:" (Let(name, parsed_expr, Var ":tmp:")) ctx in
       Format.printf "%s: " name ;
       begin try
-        Utils.print_type (typeof empty_env (parser_expr_to_expr parsed_expr))
-      with Ill_typed -> Format.printf "Ill typed!\n"
-      end ; ctx
+        Utils.print_type (typeof empty_env (parser_expr_to_expr parsed_expr)) ;
+        substitute_var ":tmp:" (Let(name, parsed_expr, Var ":tmp:")) ctx
+      with Ill_typed -> Format.printf "Ill typed!\n" ; ctx
+      end 
     in
     ignore (List.fold_left test_def (Var ":tmp:") program)

@@ -6,6 +6,12 @@ let incr =
 let plus =
     fun i j : (Int -> Int -> Int) -> magic
 
+let not =
+    fun x : ((True -> False) & (False -> True)) -> magic
+
+let and =
+    fun x y : (Bool -> Bool -> Bool) -> magic
+
 (* Basic example (first example of the paper) *)
 
 let basic_ok =
@@ -28,5 +34,8 @@ let basic_fail =
 
 (* Example with Let and Pairs *)
 
+let let_pairs =
 
-
+    fun x y : ((Int -> Int -> Int) & (Bool -> Bool -> Bool)) ->
+        let z = (x,y) in
+        if z is (Int * Any) then plus x y else and (not y) x
