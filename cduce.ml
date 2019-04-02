@@ -52,6 +52,8 @@ let mk_list alpha =
 
 let mk_times = CD.Types.times
 
+let pair_any = mk_times any_node any_node
+
 let pi1 t =
     CD.Types.Product.pi1 (CD.Types.Product.get t)
 

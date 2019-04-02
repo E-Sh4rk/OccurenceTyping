@@ -31,6 +31,7 @@ val mk_atom : string -> typ
 val mk_list: node -> node
 
 val mk_times : node -> node -> typ
+val pair_any : typ
 val pi1 : typ -> typ
 val pi2 : typ -> typ
 

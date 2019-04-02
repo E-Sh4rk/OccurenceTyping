@@ -7,6 +7,8 @@ type const =
     | Int of int
     | Char of char
 
+type projection = Fst | Snd
+
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
@@ -17,6 +19,8 @@ type 'var expr' =
     | Ite of 'var expr' * typ * 'var expr' * 'var expr'
     | App of 'var expr' * 'var expr'
     | Let of 'var * 'var expr' * 'var expr'
+    | Pair of 'var expr' * 'var expr'
+    | Projection of projection * 'var expr'
 
 type parser_expr = varname expr'
 type expr = varid expr'

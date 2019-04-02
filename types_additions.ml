@@ -3,7 +3,7 @@ open Cduce
 open Ast
 
 type dir =
-    | LApp | RApp
+    | LApp | RApp | LPair | RPair | PFst | PSnd
 
 type path = dir list
 
@@ -13,7 +13,13 @@ let rec follow_path e p =
     match e, p with
     | e, [] -> e
     | App (e,_), LApp::p
-    | App (_,e), RApp::p -> follow_path e p
+    | App (_,e), RApp::p
+    | Pair (e,_), LPair::p
+    | Pair (_,e), RPair::p
+    | Projection (Fst, e), PFst::p
+    | Projection (Snd, e), PSnd::p
+    -> follow_path e p
+    (* Don't forget to add things here! *)
     | _ -> raise Invalid_path
 
 type env = typ ExprMap.t
@@ -51,6 +57,8 @@ let eliminate_all_lets e =
         | Let (v, e1, e2) ->
             let e1 = aux env e1 in
             Let (v, e1, aux (IntMap.add v e1 env) e2)
+        | Pair (e1, e2) -> Pair (aux env e1, aux env e2)
+        | Projection (p, e) -> Projection (p, aux env e)
     in
     aux IntMap.empty e
 
@@ -61,6 +69,14 @@ let rec all_paths_for_expr rev_prefix e =
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
     | Let _ -> failwith "Let bindings in tests must be eliminated before back-typing!"
+    | Pair (e1, e2) ->
+        let p1 = all_paths_for_expr (LPair::rev_prefix) e1 in
+        let p2 = all_paths_for_expr (RPair::rev_prefix) e2 in
+        (List.rev rev_prefix)::(p1@p2)
+    | Projection (Fst, e) ->
+        (List.rev rev_prefix)::(all_paths_for_expr (PFst::rev_prefix) e)
+    | Projection (Snd, e) ->
+        (List.rev rev_prefix)::(all_paths_for_expr (PSnd::rev_prefix) e)
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
