@@ -1,4 +1,5 @@
 # TODO
 
-- Add extensions (pairs, records...)
+- Add extensions (records, lists...)
 - Polymorphism
+- Type inference

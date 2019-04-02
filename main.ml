@@ -9,8 +9,8 @@ let beta  = mk_var false "b"
 let int_t = mk_atom "int"
 let string_t = mk_atom "string"
 
-let _ =
-    (* Test records and recursive types *)
+let test_cduce _ =
+  (* Test records and recursive types *)
     let alpha_list = mk_list (cons alpha) in
     let beta_list = mk_list (cons beta) in
     let beta_list_list = mk_list beta_list in
@@ -30,8 +30,21 @@ let _ =
     Utils.print_type (domain f) ;
     Utils.print_type (apply f int_t) ;
     (* Test custom operators *)
-    Utils.print_type (square f int_t) ;
+    Utils.print_type (square f int_t)
+
+let _ =    
     (* Occurence typing *)
     let fn = ref "test.j" in
     if Array.length Sys.argv > 1 then fn := Sys.argv.(1) ;
-    Utils.print_type (typeof empty_env (parser_expr_to_expr (Parsing.parse_source_file !fn)))
+
+    let program = Parsing.parse_program_file !fn in
+    let test_def ctx (name,parsed_expr) =
+      let parsed_expr = substitute_var ":tmp:" parsed_expr ctx in
+      let ctx = substitute_var ":tmp:" (Let(name, parsed_expr, Var ":tmp:")) ctx in
+      Format.printf "%s: " name ;
+      begin try
+        Utils.print_type (typeof empty_env (parser_expr_to_expr parsed_expr))
+      with Ill_typed -> Format.printf "Ill typed!\n"
+      end ; ctx
+    in
+    ignore (List.fold_left test_def (Var ":tmp:") program)
