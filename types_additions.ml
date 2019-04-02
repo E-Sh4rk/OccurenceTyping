@@ -24,6 +24,9 @@ let rec follow_path e p =
 
 type env = typ ExprMap.t
 let empty_env = ExprMap.empty
+let is_bottom env =
+    let is_bottom (_,v) = is_empty v in
+    List.exists is_bottom (ExprMap.bindings env)
 
 let conj ts = List.fold_left cap any ts
 let disj ts = List.fold_left cup empty ts
@@ -129,6 +132,8 @@ and optimized_back_typeof env e t ps =
     List.map (fun p -> back_typeof_rev memo env e t (List.rev p)) ps
 
 and typeof env e =
+    (* The rule that states that 'every expression has type bottom in the bottom environment'
+       is integrated in the Ite case for efficiency reasons. *)
     match ExprMap.find_opt e env with
     | Some t -> t
     | None ->
@@ -161,8 +166,8 @@ and typeof env e =
             let t0 = typeof env e in
             let env1 = refine_env env e (cap t0 t) in
             let env2 = refine_env env e (cap t0 (neg t)) in
-            let t1 = typeof env1 e1 in
-            let t2 = typeof env2 e2 in
+            let t1 = if is_bottom env1 then empty else typeof env1 e1 in
+            let t2 = if is_bottom env2 then empty else typeof env2 e2 in
             cup t1 t2
         | Let (v, e1, e2) ->
             let env = ExprMap.add e1 (typeof env e1) env in

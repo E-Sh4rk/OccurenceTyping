@@ -12,6 +12,7 @@ val follow_path : expr -> path -> expr
 
 type env = typ ExprMap.t
 val empty_env : env
+val is_bottom : env -> bool
 
 val conj : typ list -> typ
 val disj : typ list -> typ
