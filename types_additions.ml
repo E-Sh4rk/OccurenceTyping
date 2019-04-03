@@ -85,13 +85,9 @@ let rec all_paths_for_expr rev_prefix e =
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
 let rec back_typeof_rev (memo_t,memo_bt) env e t p =
+    let typeof = typeof_memo memo_t in
     let typeof p =
-        if Hashtbl.mem memo_t p then Hashtbl.find memo_t p
-        else begin
-            let res = typeof env (follow_path e (List.rev p)) in
-            Hashtbl.replace memo_t p res ;
-            res
-        end
+        typeof env (follow_path e (List.rev p))
     in
     let rec aux p =
         if Hashtbl.mem memo_bt p then Hashtbl.find memo_bt p
@@ -131,9 +127,9 @@ and optimized_back_typeof env e t ps =
     let memo = (Hashtbl.create n, Hashtbl.create n) in
     List.map (fun p -> back_typeof_rev memo env e t (List.rev p)) ps
 
-and typeof env e =
+and typeof_raw self (env, e) =
     (* The rule that states that 'every expression has type bottom in the bottom environment'
-       is integrated in the Ite case for efficiency reasons. *)
+    is integrated in the Ite case for efficiency reasons. *)
     match ExprMap.find_opt e env with
     | Some t -> t
     | None ->
@@ -149,7 +145,7 @@ and typeof env e =
             | ts::dnf ->
                 let is_valid (s,t) =
                     let new_env = ExprMap.add (Var v) s env in
-                    subtype (typeof new_env e) t
+                    subtype (self (new_env, e)) t
                 in
                 if List.for_all is_valid ts then
                     let fs = List.map (fun (s,t) -> mk_arrow (cons s) (cons t)) ts in
@@ -159,33 +155,42 @@ and typeof env e =
             let ts = valid_types [] dnf in
             if ts = [] then raise Ill_typed else conj ts
         | App (e1, e2) ->
-            let t1 = typeof env e1 in
-            let t2 = typeof env e2 in
+            let t1 = self (env, e1) in
+            let t2 = self (env, e2) in
             if subtype t2 (domain t1) then apply t1 t2 else raise Ill_typed
         | Ite (e,t,e1,e2) ->
-            let t0 = typeof env e in
+            let t0 = self (env, e) in
             let env1 = refine_env env e (cap t0 t) in
             let env2 = refine_env env e (cap t0 (neg t)) in
-            let t1 = if is_bottom env1 then empty else typeof env1 e1 in
-            let t2 = if is_bottom env2 then empty else typeof env2 e2 in
+            let t1 = if is_bottom env1 then empty else self (env1, e1) in
+            let t2 = if is_bottom env2 then empty else self (env2, e2) in
             cup t1 t2
         | Let (v, e1, e2) ->
-            let env = ExprMap.add e1 (typeof env e1) env in
-            typeof env (substitute_var v e1 e2)
+            let env = ExprMap.add e1 (self (env, e1)) env in
+            self (env, substitute_var v e1 e2)
         | Var _ -> failwith "Unknown variable type..."
         | Pair (e1, e2) ->
-            let t1 = typeof env e1 in
-            let t2 = typeof env e2 in
+            let t1 = self (env, e1) in
+            let t2 = self (env, e2) in
             mk_times (cons t1) (cons t2)
         | Projection (Fst, e) ->
-            let t = typeof env e in
+            let t = self (env, e) in
             if subtype t pair_any then pi1 t else raise Ill_typed
         | Projection (Snd, e) ->
-            let t = typeof env e in
+            let t = self (env, e) in
             if subtype t pair_any then pi2 t else raise Ill_typed
     end
 
+and typeof_no_memo _ =
+    let typeof = Utils.no_memoize typeof_raw in
+    fun env e -> typeof (env, e)
+
+and typeof_memo ht =
+    let typeof = Utils.memoize typeof_raw snd ht in
+    fun env e -> typeof (env, e)
+
 and refine_env env e t =
+    let typeof = typeof_no_memo () in
     let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
     (* Deduce a type for each path *)
@@ -210,3 +215,5 @@ and refine_env env e t =
         ExprMap.add e' new_type acc
     in
     List.fold_left refine_for_expr env (ExprMap.bindings map)
+
+let typeof = typeof_no_memo ()
