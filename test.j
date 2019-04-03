@@ -34,13 +34,13 @@ let basic_fail =
 
 (* Example with Let and Pairs *)
 
-let let_pairs =
+let let_pairs_ok =
 
     fun x : (((Int * Int) -> Int) & ((Bool * Bool) -> Bool)) ->
         let y = fst x in let z = snd x in
         if x is (Int * Any) then plus y z else and (not y) z
 
-let let_pairs2 =
+let let_pairs_variant =
 
     fun x y : ((Int -> Int -> Int) & (Bool -> Bool -> Bool)) ->
         let z = (x,y) in

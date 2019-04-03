@@ -88,26 +88,16 @@ let rec back_typeof_rev self (memo_t, env, e, t, p) =
     let typeof = typeof_memo memo_t in
     let typeof p = typeof env (follow_path e (List.rev p)) in
     let self = fun p -> self (memo_t, env, e, t, p) in
-    match p with
+    let t = match p with
     | [] -> t
-    | LApp::p ->
-        let dom = typeof (RApp::p) in
-        let codom = self p in
-        mk_arrow (cons dom) (cons codom)
-    | RApp::p ->
-        let f_typ = typeof (LApp::p) in
-        let out_typ = self p in
-        square f_typ out_typ
-    | LPair::p ->
-        let typeof_pair = mk_times any_node any_node(*(cons (typeof (RPair::p)))*) in
-        let pair = cap (self p) typeof_pair in
-        pi1 pair
-    | RPair::p ->
-        let typeof_pair = mk_times any_node(*(cons (typeof (LPair::p)))*) any_node in
-        let pair = cap (self p) typeof_pair in
-        pi2 pair
+    | LApp::p -> mk_arrow (cons (typeof (RApp::p))) (cons (self p))
+    | RApp::p -> square (typeof (LApp::p)) (self p)
+    | LPair::p -> pi1 (self p)
+    | RPair::p -> pi2 (self p)
     | PFst::p -> mk_times (cons (self p)) any_node
     | PSnd::p -> mk_times any_node (cons (self p))
+    in
+    cap t (typeof p)
 
 and back_typeof_no_memo _ =
     let back_typeof_rev = Utils.no_memoize back_typeof_rev in
@@ -152,9 +142,9 @@ and typeof_raw self (env, e) =
             let t2 = self (env, e2) in
             if subtype t2 (domain t1) then apply t1 t2 else raise Ill_typed
         | Ite (e,t,e1,e2) ->
-            let t0 = self (env, e) in
-            let env1 = refine_env env e (cap t0 t) in
-            let env2 = refine_env env e (cap t0 (neg t)) in
+            (* No need to check the type of e here: it is already checked in refine_env *)
+            let env1 = refine_env env e t in
+            let env2 = refine_env env e (neg t) in
             let t1 = if is_bottom env1 then empty else self (env1, e1) in
             let t2 = if is_bottom env2 then empty else self (env2, e2) in
             cup t1 t2
@@ -184,7 +174,6 @@ and typeof_memo ht =
 
 and refine_env env e t =
     (* No need to continue memoisation here because back_typeof never goes into Ite *)
-    let typeof = typeof_no_memo () in
     let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
     (* Deduce a type for each path *)
@@ -201,12 +190,8 @@ and refine_env env e t =
     let map = List.fold_left add_path ExprMap.empty paths in
     (* Refine the type for each expression *)
     let refine_for_expr acc (e', paths) =
-        let old_type = typeof env e' in
-        let refine acc p =
-            cap acc (PathMap.find p paths_t)
-        in
-        let new_type = List.fold_left refine old_type paths in
-        ExprMap.add e' new_type acc
+        let types = List.map (fun p -> PathMap.find p paths_t) paths in
+        ExprMap.add e' (conj types) acc
     in
     List.fold_left refine_for_expr env (ExprMap.bindings map)
 

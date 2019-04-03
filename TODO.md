@@ -1,6 +1,7 @@
 # TODO
 
-- Update implementation for backtyping to match new definitions
+- Add custom types support
+- Add warnings when a branch is NEVER reachable
 - Add extensions (records, lists...)
 - Polymorphism
 - Type inference
