@@ -10,13 +10,15 @@ let newline = ('\010' | '\013' | "\013\010")
 
 let blank   = [' ' '\009' '\012']
 
-let id = ['a'-'z''0'-'9''_']+
+let id = ['a'-'z']['a'-'z''A'-'Z''0'-'9''_']*
+
+let type_id = ['A'-'Z']['a'-'z''A'-'Z''0'-'9''_']*
 
 let decimal = ['0'-'9']+
 
 let fn = (decimal "." decimal?) | (decimal? "." decimal)
 
-let char = '\'' ['a'-'z''0'-'9''_'' '] '\''
+let char = '\'' ['a'-'z''A'-'Z''0'-'9''_'' '] '\''
 
 rule token = parse
 | newline { enter_newline lexbuf |> token }

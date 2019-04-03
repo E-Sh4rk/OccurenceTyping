@@ -17,7 +17,8 @@ let memoize f input_transform ht =
     )
   in aux
 
-let no_memoize f =
+let do_not_memoize f =
   let rec aux input =
     f aux input
   in aux
+  

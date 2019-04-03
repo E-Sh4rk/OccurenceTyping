@@ -1,7 +1,8 @@
 
 open Cduce
-open Types_additions
 open Ast
+open Types_additions
+open Checker
 
 let alpha = mk_var false "a"
 let beta  = mk_var false "b"
