@@ -84,52 +84,45 @@ let rec all_paths_for_expr rev_prefix e =
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
-let rec back_typeof_rev (memo_t,memo_bt) env e t p =
+let rec back_typeof_rev self (memo_t, env, e, t, p) =
     let typeof = typeof_memo memo_t in
-    let typeof p =
-        typeof env (follow_path e (List.rev p))
-    in
-    let rec aux p =
-        if Hashtbl.mem memo_bt p then Hashtbl.find memo_bt p
-        else begin
-            let res = match p with
-            | [] -> t
-            | LApp::p ->
-                let dom = typeof (RApp::p) in
-                let codom = aux p in
-                mk_arrow (cons dom) (cons codom)
-            | RApp::p ->
-                let f_typ = typeof (LApp::p) in
-                let out_typ = aux p in
-                square f_typ out_typ
-            | LPair::p ->
-                let typeof_pair = mk_times any_node any_node(*(cons (typeof (RPair::p)))*) in
-                let pair = cap (aux p) typeof_pair in
-                pi1 pair
-            | RPair::p ->
-                let typeof_pair = mk_times any_node(*(cons (typeof (LPair::p)))*) any_node in
-                let pair = cap (aux p) typeof_pair in
-                pi2 pair
-            | PFst::p -> mk_times (cons (aux p)) any_node
-            | PSnd::p -> mk_times any_node (cons (aux p))
-            in
-            Hashtbl.replace memo_bt p res ;
-            res
-        end
-    in aux p
+    let typeof p = typeof env (follow_path e (List.rev p)) in
+    let self = fun p -> self (memo_t, env, e, t, p) in
+    match p with
+    | [] -> t
+    | LApp::p ->
+        let dom = typeof (RApp::p) in
+        let codom = self p in
+        mk_arrow (cons dom) (cons codom)
+    | RApp::p ->
+        let f_typ = typeof (LApp::p) in
+        let out_typ = self p in
+        square f_typ out_typ
+    | LPair::p ->
+        let typeof_pair = mk_times any_node any_node(*(cons (typeof (RPair::p)))*) in
+        let pair = cap (self p) typeof_pair in
+        pi1 pair
+    | RPair::p ->
+        let typeof_pair = mk_times any_node(*(cons (typeof (LPair::p)))*) any_node in
+        let pair = cap (self p) typeof_pair in
+        pi2 pair
+    | PFst::p -> mk_times (cons (self p)) any_node
+    | PSnd::p -> mk_times any_node (cons (self p))
 
-and back_typeof env e t p =
-    let memo = (Hashtbl.create 10, Hashtbl.create 10) in
-    back_typeof_rev memo env e t (List.rev p)
+and back_typeof_no_memo _ =
+    let back_typeof_rev = Utils.no_memoize back_typeof_rev in
+    fun env e t p -> back_typeof_rev (Hashtbl.create 1, env, e, t, List.rev p)
 
 and optimized_back_typeof env e t ps =
     let n = List.length ps in
-    let memo = (Hashtbl.create n, Hashtbl.create n) in
-    List.map (fun p -> back_typeof_rev memo env e t (List.rev p)) ps
+    let path_select (_,_,_,_,p) = p in
+    let back_typeof_rev = Utils.memoize back_typeof_rev path_select (Hashtbl.create n) in
+    let memo_to = Hashtbl.create n in
+    List.map (fun p -> back_typeof_rev (memo_to, env, e, t, List.rev p)) ps
 
 and typeof_raw self (env, e) =
     (* The rule that states that 'every expression has type bottom in the bottom environment'
-    is integrated in the Ite case for efficiency reasons. *)
+       is integrated in the Ite case for efficiency reasons. *)
     match ExprMap.find_opt e env with
     | Some t -> t
     | None ->
@@ -190,6 +183,7 @@ and typeof_memo ht =
     fun env e -> typeof (env, e)
 
 and refine_env env e t =
+    (* No need to continue memoisation here because back_typeof never goes into Ite *)
     let typeof = typeof_no_memo () in
     let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
@@ -217,3 +211,4 @@ and refine_env env e t =
     List.fold_left refine_for_expr env (ExprMap.bindings map)
 
 let typeof = typeof_no_memo ()
+let back_typeof = back_typeof_no_memo ()
