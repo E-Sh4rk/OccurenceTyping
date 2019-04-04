@@ -9,11 +9,12 @@ let square f out =
     let dnf = dnf f in
     let res = dnf |> List.map begin
         fun lst ->
-            let res = lst |> List.map begin
+            let lst = lst |> List.map begin
                 fun (s,t) ->
-                    if is_empty (cap out t) then empty else s (* if polymorphism: s should be refined... *)
+                    if is_empty (cap out t) then (s,false) else (s,true) (* if polymorphism: s should be refined... *)
             end in
-            List.fold_left cup empty res
+            let possibles = List.filter (function (_,b) -> b) lst |> List.map fst in
+            let impossibles = List.filter (function (_,b) -> not b) lst |> List.map (fun (t,_) -> neg t) in
+            cap (disj possibles) (conj impossibles)
     end in
-    let res = List.fold_left cup empty res in
-    cap (domain f) res
+    cap (domain f) (disj res)

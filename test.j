@@ -47,14 +47,15 @@ let let_pairs_curry =
         if z is (Int * Any) then plus x y else and (not y) x
 
 (* Example that shows that backtyping is stronger if we intersect with the environment as soon as possible *)
+(* Also need the improved version of the square operator *)
 
-let step_by_step =
+let two_steps =
 
         let f = fun x : (( (Any \ Int) -> ((Any * Any) \ (Int * Int)) ) & (Int -> (Int * Int))) -> magic
         in
         fun x : (Any -> Int) ->
-                if snd (debug "First test f x" (f x)) is Int
+                if snd (f x) is Int
                 then
-                        if fst (debug "Second test f x" (f x)) is Int then debug "If If x" x
-                        else let tmp = debug "If Else x" x in 0
-                else let tmp = debug "Else x" x in 0
+                        if fst (f x) is Int then x
+                        else 0
+                else 0
