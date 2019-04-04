@@ -30,7 +30,8 @@ val neg : typ -> typ
 
 val mk_var : bool -> string -> typ
 val mk_atom : string -> typ
-val mk_list: node -> node
+val mk_new_typ: unit -> node
+val define_typ: node -> typ -> unit
 
 val mk_times : node -> node -> typ
 val pair_any : typ

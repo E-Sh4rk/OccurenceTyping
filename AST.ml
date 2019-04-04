@@ -43,7 +43,7 @@ let unique_varid =
     )
 
 module StrMap = Map.Make(String)
-let parser_expr_to_expr e =
+let parser_expr_to_expr tenv e =
     let rec aux env e =
         match e with
         | Const c -> Const c
@@ -51,9 +51,9 @@ let parser_expr_to_expr e =
         | Lambda (t,str,e) ->
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
-            Lambda (type_expr_to_typ t, varid, aux env e)
+            Lambda (type_expr_to_typ tenv t, varid, aux env e)
         | Ite (e, t, e1, e2) ->
-            Ite (aux env e, type_expr_to_typ t, aux env e1, aux env e2)
+            Ite (aux env e, type_expr_to_typ tenv t, aux env e1, aux env e2)
         | App (e1, e2) ->
             App (aux env e1, aux env e2)
         | Let (str, e1, e2) ->

@@ -40,6 +40,7 @@ let mk_var internal name =
 let mk_atom ascii_name =
     ascii_name |> CD.Atoms.V.mk_ascii |> CD.Atoms.atom |> CD.Types.atom
 
+(*
 let mk_list alpha =
     let alpha_list = CD.Types.make () in
 
@@ -49,6 +50,11 @@ let mk_list alpha =
     let descr = CD.Types.cup nil_atom cons in
     CD.Types.define alpha_list descr ;
     alpha_list
+*)
+
+let mk_new_typ = CD.Types.make
+
+let define_typ = CD.Types.define
 
 
 let mk_times = CD.Types.times

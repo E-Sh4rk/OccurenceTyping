@@ -16,6 +16,11 @@ type type_expr =
 | TDiff of type_expr * type_expr
 | TNeg of type_expr
 
+module StrMap = Map.Make(String)
+type type_env = node StrMap.t
+
+let empty_tenv = StrMap.empty
+
 let type_base_to_typ t =
     match t with
     | TInt -> Cduce.int_typ | TBool -> Cduce.bool_typ
@@ -23,33 +28,27 @@ let type_base_to_typ t =
     | TUnit -> Cduce.unit_typ | TChar -> Cduce.char_typ
     | TAny -> Cduce.any | TEmpty -> Cduce.empty
 
-let rec type_expr_to_typ t =
-    match t with
-    | TBase tb -> type_base_to_typ tb
-    | TCustom _ -> failwith "TODO"
-    | TPair (t1,t2) ->
-        (* /!\ Do not support recursive types yet. TODO *)
-        let t1 = type_expr_to_typ t1 in
-        let t2 = type_expr_to_typ t2 in
-        Cduce.mk_times (Cduce.cons t1) (Cduce.cons t2)
-    | TArrow (t1,t2) ->
-        (* /!\ Do not support recursive types yet. TODO *)
-        let t1 = type_expr_to_typ t1 in
-        let t2 = type_expr_to_typ t2 in
-        Cduce.mk_arrow (Cduce.cons t1) (Cduce.cons t2)
-    | TCup (t1,t2) ->
-        let t1 = type_expr_to_typ t1 in
-        let t2 = type_expr_to_typ t2 in
-        Cduce.cup t1 t2
-    | TCap (t1,t2) ->
-        let t1 = type_expr_to_typ t1 in
-        let t2 = type_expr_to_typ t2 in
-        Cduce.cap t1 t2
-    | TDiff (t1,t2) ->
-        let t1 = type_expr_to_typ t1 in
-        let t2 = type_expr_to_typ t2 in
-        Cduce.diff t1 t2
-    | TNeg t -> Cduce.neg (type_expr_to_typ t)
+let type_expr_to_typ env t =
+    let rec aux t =
+        match t with
+        | TBase tb -> cons (type_base_to_typ tb)
+        | TCustom k -> StrMap.find k env
+        | TPair (t1,t2) -> cons (mk_times (aux t1) (aux t2))
+        | TArrow (t1,t2) -> cons (mk_arrow (aux t1) (aux t2))
+        | TCup (t1,t2) ->
+            let t1 = descr (aux t1) in
+            let t2 = descr (aux t2) in
+            cons (cup t1 t2)
+        | TCap (t1,t2) ->
+            let t1 = descr (aux t1) in
+            let t2 = descr (aux t2) in
+            cons (cap t1 t2)
+        | TDiff (t1,t2) ->
+            let t1 = descr (aux t1) in
+            let t2 = descr (aux t2) in
+            cons (diff t1 t2)
+        | TNeg t -> cons (neg (descr (aux t)))
+    in descr (aux t)
 
 (* Operations on types *)
 

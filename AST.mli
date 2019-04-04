@@ -37,7 +37,7 @@ module ExprMap : Map.S with type key = expr
 
 val unique_varid : unit -> varid
 
-val parser_expr_to_expr : parser_expr -> expr
+val parser_expr_to_expr : type_env -> parser_expr -> expr
 
 val substitute_var : 'a -> ('b, 'a) expr' -> ('b, 'a) expr' -> ('b, 'a) expr'
 

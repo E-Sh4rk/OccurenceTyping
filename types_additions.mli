@@ -16,9 +16,14 @@ type type_expr =
 | TDiff of type_expr * type_expr
 | TNeg of type_expr
 
+module StrMap : Map.S with type key = string
+type type_env = node StrMap.t
+
+val empty_tenv : type_env
+
 val type_base_to_typ : type_base -> typ
 
-val type_expr_to_typ : type_expr -> typ
+val type_expr_to_typ : type_env -> type_expr -> typ
 
 (* Operations on types *)
 
