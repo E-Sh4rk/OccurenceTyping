@@ -13,27 +13,32 @@ type projection = Fst | Snd
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
-type 'var expr' =
-    | Const of const
-    | Var of 'var
-    | Lambda of typ * 'var * 'var expr'
-    | Ite of 'var expr' * typ * 'var expr' * 'var expr'
-    | App of 'var expr' * 'var expr'
-    | Let of 'var * 'var expr' * 'var expr'
-    | Pair of 'var expr' * 'var expr'
-    | Projection of projection * 'var expr'
-    | Debug of string * 'var expr'
+type type_base =
+    TInt | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
 
-type parser_expr = varname expr'
-type expr = varid expr'
+type type_expr =
+| TBase of type_base
+| TCustom of string
+| TPair of type_expr * type_expr
+| TArrow of type_expr * type_expr
+| TCup of type_expr * type_expr
+| TCap of type_expr * type_expr
+| TDiff of type_expr * type_expr
+| TNeg of type_expr
 
-let rec make_lambda_abstraction vars t e =
-    match vars with
-    | [] -> e
-    | [x] -> Lambda (t,x,e)
-    | x::vars ->
-        let new_t = Cduce.apply t (Cduce.domain t) in
-        Lambda (t,x,make_lambda_abstraction vars new_t e)
+type ('t, 'v) expr' =
+| Const of const
+| Var of 'v
+| Lambda of 't * 'v * ('t, 'v) expr'
+| Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
+| App of ('t, 'v) expr' * ('t, 'v) expr'
+| Let of 'v * ('t, 'v) expr' * ('t, 'v) expr'
+| Pair of ('t, 'v) expr' * ('t, 'v) expr'
+| Projection of projection * ('t, 'v) expr'
+| Debug of string * ('t, 'v) expr'
+
+type parser_expr = (type_expr, varname) expr'
+type expr = (typ, varid) expr'
 
 module Expr = struct
     type t = expr
@@ -51,6 +56,41 @@ let unique_varid =
 
 module StrMap = Map.Make(String)
 
+let type_base_to_typ t =
+    match t with
+    | TInt -> Cduce.int_typ | TBool -> Cduce.bool_typ
+    | TTrue -> Cduce.true_typ | TFalse -> Cduce.false_typ
+    | TUnit -> Cduce.unit_typ | TChar -> Cduce.char_typ
+    | TAny -> Cduce.any | TEmpty -> Cduce.empty
+
+let rec type_expr_to_typ t =
+    match t with
+    | TBase tb -> type_base_to_typ tb
+    | TCustom _ -> failwith "TODO"
+    | TPair (t1,t2) ->
+        (* /!\ Do not support recursive types yet. TODO *)
+        let t1 = type_expr_to_typ t1 in
+        let t2 = type_expr_to_typ t2 in
+        Cduce.mk_times (Cduce.cons t1) (Cduce.cons t2)
+    | TArrow (t1,t2) ->
+        (* /!\ Do not support recursive types yet. TODO *)
+        let t1 = type_expr_to_typ t1 in
+        let t2 = type_expr_to_typ t2 in
+        Cduce.mk_arrow (Cduce.cons t1) (Cduce.cons t2)
+    | TCup (t1,t2) ->
+        let t1 = type_expr_to_typ t1 in
+        let t2 = type_expr_to_typ t2 in
+        Cduce.cup t1 t2
+    | TCap (t1,t2) ->
+        let t1 = type_expr_to_typ t1 in
+        let t2 = type_expr_to_typ t2 in
+        Cduce.cap t1 t2
+    | TDiff (t1,t2) ->
+        let t1 = type_expr_to_typ t1 in
+        let t2 = type_expr_to_typ t2 in
+        Cduce.diff t1 t2
+    | TNeg t -> Cduce.neg (type_expr_to_typ t)
+
 let parser_expr_to_expr e =
     let rec aux env e =
         match e with
@@ -59,9 +99,9 @@ let parser_expr_to_expr e =
         | Lambda (t,str,e) ->
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
-            Lambda (t, varid, aux env e)
+            Lambda (type_expr_to_typ t, varid, aux env e)
         | Ite (e, t, e1, e2) ->
-            Ite (aux env e, t, aux env e1, aux env e2)
+            Ite (aux env e, type_expr_to_typ t, aux env e1, aux env e2)
         | App (e1, e2) ->
             App (aux env e1, aux env e2)
         | Let (str, e1, e2) ->
@@ -89,3 +129,10 @@ let rec substitute_var v ve e =
     | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
     | Projection (p, e) -> Projection (p, substitute_var v ve e)
     | Debug (str, e) -> Debug (str, substitute_var v ve e)
+
+type parser_element =
+| Definition of (string * parser_expr)
+| Atoms of string list
+| Types of (string * type_expr) list
+
+type parser_program = parser_element list

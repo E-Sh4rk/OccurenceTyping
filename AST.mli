@@ -13,21 +13,32 @@ type projection = Fst | Snd
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
-type 'var expr' =
-    | Const of const
-    | Var of 'var
-    | Lambda of typ * 'var * 'var expr'
-    | Ite of 'var expr' * typ * 'var expr' * 'var expr'
-    | App of 'var expr' * 'var expr'
-    | Let of 'var * 'var expr' * 'var expr'
-    | Pair of 'var expr' * 'var expr'
-    | Projection of projection * 'var expr'
-    | Debug of string * 'var expr'
+type type_base =
+    TInt | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
 
-type parser_expr = varname expr'
-type expr = varid expr'
+type type_expr =
+| TBase of type_base
+| TCustom of string
+| TPair of type_expr * type_expr
+| TArrow of type_expr * type_expr
+| TCup of type_expr * type_expr
+| TCap of type_expr * type_expr
+| TDiff of type_expr * type_expr
+| TNeg of type_expr
 
-val make_lambda_abstraction : 'a list -> typ -> 'a expr' -> 'a expr'
+type ('t, 'v) expr' =
+| Const of const
+| Var of 'v
+| Lambda of 't * 'v * ('t, 'v) expr'
+| Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
+| App of ('t, 'v) expr' * ('t, 'v) expr'
+| Let of 'v * ('t, 'v) expr' * ('t, 'v) expr'
+| Pair of ('t, 'v) expr' * ('t, 'v) expr'
+| Projection of projection * ('t, 'v) expr'
+| Debug of string * ('t, 'v) expr'
+
+type parser_expr = (type_expr, varname) expr'
+type expr = (typ, varid) expr'
 
 module Expr : sig
     type t = expr
@@ -38,6 +49,17 @@ module ExprMap : Map.S with type key = expr
 
 val unique_varid : unit -> varid
 
+val type_base_to_typ : type_base -> typ
+
+val type_expr_to_typ : type_expr -> typ
+
 val parser_expr_to_expr : parser_expr -> expr
 
-val substitute_var : 'a -> 'a expr' -> 'a expr' -> 'a expr'
+val substitute_var : 'a -> ('b, 'a) expr' -> ('b, 'a) expr' -> ('b, 'a) expr'
+
+type parser_element =
+| Definition of (string * parser_expr)
+| Atoms of string list
+| Types of (string * type_expr) list
+
+type parser_program = parser_element list

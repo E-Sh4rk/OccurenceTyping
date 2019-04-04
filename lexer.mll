@@ -25,6 +25,9 @@ let string = '"' ['a'-'z''A'-'Z''0'-'9''_'' ''-']* '"'
 rule token = parse
 | newline { enter_newline lexbuf |> token }
 | blank   { token lexbuf }
+| "atoms" { ATOMS }
+| "type"  { TYPE }
+| "and"   { TYPE_AND }
 | "(*"    { comment 0 lexbuf }
 | "->"    { ARROW }
 | "&"     { AND  }
@@ -67,6 +70,7 @@ rule token = parse
 | string as s { LSTRING (String.sub s 1 ((String.length s) - 2)) }
 | char as c { LCHAR (c.[1]) }
 | id as s { ID s }
+| type_id as s { TID s }
 | eof     { EOF }
 | _ as c  {
   Printf.eprintf "Lexing error at %d: Unexpected `%c'."

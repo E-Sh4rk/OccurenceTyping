@@ -38,7 +38,7 @@ let _ =
     let fn = ref "test.j" in
     if Array.length Sys.argv > 1 then fn := Sys.argv.(1) ;
 
-    let program = Parsing.parse_program_file !fn in
+    let program = Parsing.parse_defs_file !fn in
     let test_def ctx (name,parsed_expr) =
       let parsed_expr = substitute_var ":tmp:" parsed_expr ctx in
       Format.printf "%s: " name ;

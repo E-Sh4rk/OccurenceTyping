@@ -30,7 +30,9 @@
 %token ARROW AND OR NEG DIFF
 %token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE UNIT
 %token TIMES (*PLUS MINUS*)
+%token ATOMS TYPE TYPE_AND
 %token<string> ID
+%token<string> TID
 (*%token<float> LFLOAT*)
 %token<int> LINT
 %token<bool> LBOOL
@@ -41,7 +43,8 @@
 
 %type<Ast.parser_expr> term
 %start<Ast.parser_expr> unique_term
-%start<(Ast.varname * Ast.parser_expr) list> program
+%start<(Ast.varname * Ast.parser_expr) list> definitions
+%start<Ast.parser_program> program
 
 %right ARROW (*IN*)
 %left OR
@@ -53,12 +56,26 @@
 
 %%
 
-program: a=definition* EOF { a }
+program: e=element* EOF { e }
+
+definitions: a=definition* EOF { a }
 (*| error {
   parsing_error (Position.lex_join $startpos $endpos) "Syntax error."
 }*)
 
 unique_term: t=term EOF { t }
+
+
+element:
+  a=definition { Definition a }
+| a=atoms      { Atoms a }
+| a=types_def  { Types a }
+
+atoms: ATOMS a=ID* { a }
+
+types_def: TYPE ts=separated_nonempty_list(TYPE_AND, name_and_typ) { ts }
+
+name_and_typ: name=TID EQUAL t=typ { (name, t) }
 
 term:
   a=abstraction { a }
@@ -90,7 +107,8 @@ literal:
 
 %inline abstraction: FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
 {
-  make_lambda_abstraction vs ty t
+  if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
+  else Lambda (ty, List.hd vs, t)
 }
 
 %inline definition: LET i=identifier EQUAL t=term
@@ -105,26 +123,26 @@ literal:
 identifier: x=ID { x }
 
 typ:
-  x=type_constant { x }
-| lhs=typ ARROW rhs=typ
-  { Cduce.mk_arrow (Cduce.cons lhs) (Cduce.cons rhs) }
-| lhs=typ TIMES rhs=typ { Cduce.mk_times (Cduce.cons lhs) (Cduce.cons rhs) }
-| NEG t=typ { Cduce.neg t }
-| lhs=typ AND rhs=typ { Cduce.cap lhs rhs }
-| lhs=typ OR rhs=typ  { Cduce.cup lhs rhs }
-| lhs=typ DIFF rhs=typ  { Cduce.diff lhs rhs }
+  x=type_constant { TBase x }
+| s=TID { TCustom s }
+| lhs=typ ARROW rhs=typ { TArrow (lhs, rhs) }
+| lhs=typ TIMES rhs=typ { TPair (lhs, rhs) }
+| NEG t=typ { TNeg t }
+| lhs=typ AND rhs=typ { TCap (lhs, rhs) }
+| lhs=typ OR rhs=typ  { TCup (lhs, rhs) }
+| lhs=typ DIFF rhs=typ  { TDiff (lhs, rhs) }
 | LPAREN t=typ RPAREN { t }
 
 type_constant:
 (*  FLOAT { TyFloat }*)
-  INT { Cduce.int_typ }
-| CHAR { Cduce.char_typ }
-| BOOL { Cduce.bool_typ }
-| TRUE { Cduce.true_typ }
-| FALSE { Cduce.false_typ }
-| UNIT { Cduce.unit_typ }
-| EMPTY { Cduce.empty }
-| ANY { Cduce.any }
+  INT { TInt }
+| CHAR { TChar }
+| BOOL { TBool }
+| TRUE { TTrue }
+| FALSE { TFalse }
+| UNIT { TUnit }
+| EMPTY { TEmpty }
+| ANY { TAny }
 
 (*%inline located(X): x=X {
   Position.with_poss $startpos $endpos x

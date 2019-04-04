@@ -4,13 +4,13 @@ let incr =
     fun i : (Int -> Int) -> magic
 
 let plus =
-    fun i j : (Int -> Int -> Int) -> magic
+    fun i : (Int -> Int -> Int) -> magic
 
-let not =
+let lnot =
     fun x : ((True -> False) & (False -> True)) -> magic
 
-let and =
-    fun x y : (Bool -> Bool -> Bool) -> magic
+let land =
+    fun x : (Bool -> Bool -> Bool) -> magic
 
 (* Basic example (first example of the paper) *)
 
@@ -38,13 +38,7 @@ let let_pairs_ok =
 
     fun x : (((Int * Int) -> Int) & ((Bool * Bool) -> Bool)) ->
         let y = fst x in let z = snd x in
-        if x is (Int * Any) then plus y z else and (not y) z
-
-let let_pairs_curry =
-
-    fun x y : ((Int -> Int -> Int) & (Bool -> Bool -> Bool)) ->
-        let z = (x,y) in
-        if z is (Int * Any) then plus x y else and (not y) x
+        if x is (Int * Any) then plus y z else land (lnot y) z
 
 (* Example that shows that backtyping is stronger if we intersect with the environment as soon as possible *)
 (* Also need the improved version of the square operator *)
