@@ -3,6 +3,7 @@ type typ = Cduce.typ
 
 type const =
     | Magic
+    | Unit
     | Bool of bool
     | Int of int
     | Char of char
@@ -10,7 +11,7 @@ type const =
 type projection = Fst | Snd
 
 type varname = string
-type varid = int
+type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
 type 'var expr' =
     | Const of const
@@ -21,6 +22,7 @@ type 'var expr' =
     | Let of 'var * 'var expr' * 'var expr'
     | Pair of 'var expr' * 'var expr'
     | Projection of projection * 'var expr'
+    | Debug of 'var expr'
 
 type parser_expr = varname expr'
 type expr = varid expr'
@@ -69,6 +71,7 @@ let parser_expr_to_expr e =
         | Pair (e1, e2) ->
             Pair (aux env e1, aux env e2)
         | Projection (p, e) -> Projection (p, aux env e)
+        | Debug e -> Debug (aux env e)
     in
     aux StrMap.empty e
 
@@ -85,3 +88,4 @@ let rec substitute_var v ve e =
     | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
     | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
     | Projection (p, e) -> Projection (p, substitute_var v ve e)
+    | Debug e -> Debug (substitute_var v ve e)

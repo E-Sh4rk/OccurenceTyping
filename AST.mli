@@ -3,6 +3,7 @@ type typ = Cduce.typ
 
 type const =
     | Magic
+    | Unit
     | Bool of bool
     | Int of int
     | Char of char
@@ -21,6 +22,7 @@ type 'var expr' =
     | Let of 'var * 'var expr' * 'var expr'
     | Pair of 'var expr' * 'var expr'
     | Projection of projection * 'var expr'
+    | Debug of 'var expr'
 
 type parser_expr = varname expr'
 type expr = varid expr'

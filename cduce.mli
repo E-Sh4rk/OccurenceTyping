@@ -21,9 +21,11 @@ val false_typ : typ
 val bool_typ : typ
 val int_typ : typ
 val char_typ : typ
+val unit_typ : typ
 
 val cup : typ -> typ -> typ
 val cap : typ -> typ -> typ
+val diff : typ -> typ -> typ
 val neg : typ -> typ
 
 val mk_var : bool -> string -> typ

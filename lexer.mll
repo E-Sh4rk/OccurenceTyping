@@ -27,6 +27,7 @@ rule token = parse
 | "->"    { ARROW }
 | "&"     { AND  }
 | "|"     { OR  }
+| "\\"    { DIFF  }
 | "~"     { NEG  }
 | ":"     { COLON }
 | ","     { COMMA }
@@ -40,12 +41,14 @@ rule token = parse
 | "in"    { IN }
 | "fst"   { FST }
 | "snd"   { SND }
+| "debug" { DEBUG }
 | "Any"   { ANY }
 | "Empty" { EMPTY }
 | "Bool"  { BOOL }
 | "Char"  { CHAR }
 (*| "Float" { FLOAT }*)
 | "Int"   { INT }
+| "Unit"  { UNIT }
 | "True"  { TRUE }
 | "False" { FALSE }
 | "("     { LPAREN }
@@ -58,6 +61,7 @@ rule token = parse
 (*| fn as f { LFLOAT (float_of_string f) }*)
 | "true"  { LBOOL true }
 | "false" { LBOOL false }
+| "()"    { LUNIT }
 | char as c { LCHAR (c.[1]) }
 | id as s { ID s }
 | eof     { EOF }

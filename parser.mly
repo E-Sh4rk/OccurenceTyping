@@ -24,17 +24,18 @@
 %}
 
 %token EOF
-%token FUN LET IN FST SND
+%token FUN LET IN FST SND DEBUG
 %token IF IS THEN ELSE
 %token LPAREN RPAREN COLON EQUAL COMMA
-%token ARROW AND OR NEG
-%token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE
+%token ARROW AND OR NEG DIFF
+%token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE UNIT
 %token TIMES (*PLUS MINUS*)
 %token<string> ID
 (*%token<float> LFLOAT*)
 %token<int> LINT
 %token<bool> LBOOL
 %token<char> LCHAR
+%token LUNIT
 %token MAGIC
 
 %type<Ast.parser_expr> term
@@ -46,6 +47,7 @@
 %left AND
 (*%left PLUS*)
 %left TIMES
+%nonassoc DIFF
 %nonassoc NEG
 
 %%
@@ -68,6 +70,7 @@ simple_term:
   a=simple_term b=atomic_term { App (a, b) }
 | FST a=atomic_term { Projection (Fst, a) }
 | SND a=atomic_term { Projection (Snd, a) }
+| DEBUG a=atomic_term { Debug a }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
@@ -81,6 +84,7 @@ literal:
   i=LINT   { Int i }
 | c=LCHAR  { Char c }
 | b=LBOOL  { Bool b }
+| LUNIT    { Unit }
 | MAGIC    { Magic }
 
 %inline abstraction: FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
@@ -107,6 +111,7 @@ typ:
 | NEG t=typ { Cduce.neg t }
 | lhs=typ AND rhs=typ { Cduce.cap lhs rhs }
 | lhs=typ OR rhs=typ  { Cduce.cup lhs rhs }
+| lhs=typ DIFF rhs=typ  { Cduce.diff lhs rhs }
 | LPAREN t=typ RPAREN { t }
 
 type_constant:
@@ -116,6 +121,7 @@ type_constant:
 | BOOL { Cduce.bool_typ }
 | TRUE { Cduce.true_typ }
 | FALSE { Cduce.false_typ }
+| UNIT { Cduce.unit_typ }
 | EMPTY { Cduce.empty }
 | ANY { Cduce.any }
 

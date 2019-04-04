@@ -23,6 +23,7 @@ let empty_node = CD.Types.empty_node
 
 let cup = CD.Types.cup
 let cap = CD.Types.cap
+let diff = CD.Types.diff
 let neg = CD.Types.neg
 
 (* ----- *)
@@ -101,3 +102,4 @@ let false_typ = mk_atom "false"
 let bool_typ = cup true_typ false_typ
 let int_typ = CD.Types.Int.any
 let char_typ = CD.Types.Char.any
+let unit_typ = mk_atom "unit"
