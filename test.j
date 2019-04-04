@@ -52,12 +52,6 @@ let step_by_step =
 
         let f = fun x : (( (Any \ Int) -> ((Any * Any) \ (Int * Int)) ) & (Int -> (Int * Int))) -> magic
         in
-        (*fun x : (Any -> Int) ->
-                let y = debug x in
-                if snd (f y) is Int
-                then
-                        if fst (f y) is Int then y else 0
-                else 0*)
         fun x : (Any -> Int) ->
                 let x = debug x in
                 if snd (f x) is Int

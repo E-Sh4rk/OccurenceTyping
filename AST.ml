@@ -66,8 +66,8 @@ let parser_expr_to_expr e =
             App (aux env e1, aux env e2)
         | Let (str, e1, e2) ->
             let varid = unique_varid () in
-            let env = StrMap.add str varid env in
-            Let (varid, aux env e1, aux env e2)
+            let env' = StrMap.add str varid env in
+            Let (varid, aux env e1, aux env' e2)
         | Pair (e1, e2) ->
             Pair (aux env e1, aux env e2)
         | Projection (p, e) -> Projection (p, aux env e)

@@ -19,6 +19,7 @@ let rec follow_path e p =
     | Pair (_,e), RPair::p
     | Projection (Fst, e), PFst::p
     | Projection (Snd, e), PSnd::p
+    | Debug e, Dbg::p
     -> follow_path e p
     (* Don't forget to add things here! *)
     | _ -> raise Invalid_path
@@ -85,7 +86,7 @@ let rec back_typeof_rev self (memo_t, env, e, t, p) =
     | RPair::p -> pi2 (self p)
     | PFst::p -> mk_times (cons (self p)) any_node
     | PSnd::p -> mk_times any_node (cons (self p))
-    | Dbg::p -> self p
+    | Dbg::p -> let res = self p in Format.printf "Refinement: " ; Utils.print_type res; res
     in
     cap t (typeof p)
 
@@ -155,7 +156,7 @@ and typeof_raw self (env, e) =
             if subtype t pair_any then pi2 t else raise Ill_typed
         | Debug e ->
             let res = self (env, e) in
-            Utils.print_type res ;
+            Format.printf "Base type: " ; Utils.print_type res ;
             res
     end
 
