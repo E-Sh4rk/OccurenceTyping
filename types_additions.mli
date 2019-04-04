@@ -29,6 +29,8 @@ val define_atom : type_env -> string -> type_env
 
 val define_types : type_env -> (string * type_expr) list -> type_env
 
+val get_atom : type_env -> string -> typ
+
 (* Operations on types *)
 
 val conj : typ list -> typ

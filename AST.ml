@@ -2,12 +2,13 @@
 open Types_additions
 type typ = Cduce.typ
 
-type const =
-    | Magic
-    | Unit
-    | Bool of bool
-    | Int of int
-    | Char of char
+type 't const =
+| Magic
+| Unit
+| Bool of bool
+| Int of int
+| Char of char
+| Atom of 't
 
 type projection = Fst | Snd
 
@@ -15,7 +16,7 @@ type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 
 type ('t, 'v) expr' =
-| Const of const
+| Const of 't const
 | Var of 'v
 | Lambda of 't * 'v * ('t, 'v) expr'
 | Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
@@ -43,11 +44,24 @@ let unique_varid =
     )
 
 module StrMap = Map.Make(String)
+
+let parser_const_to_const tenv c =
+    match c with
+    | Atom t -> Atom (type_expr_to_typ tenv t)
+    | Magic -> Magic
+    | Unit -> Unit
+    | Bool b -> Bool b
+    | Int i -> Int i
+    | Char c -> Char c
+
 let parser_expr_to_expr tenv e =
     let rec aux env e =
         match e with
-        | Const c -> Const c
-        | Var str -> Var (StrMap.find str env)
+        | Const c -> Const (parser_const_to_const tenv c)
+        | Var str ->
+            if StrMap.mem str env
+            then Var (StrMap.find str env)
+            else Const (Atom (get_atom tenv str))
         | Lambda (t,str,e) ->
             let varid = unique_varid () in
             let env = StrMap.add str varid env in

@@ -113,6 +113,7 @@ and typeof_raw self (env, e) =
         | Const (Int _) -> int_typ
         | Const (Char _) -> char_typ
         | Const Unit -> unit_typ
+        | Const (Atom t) -> t
         | Lambda (t,v,e) ->
             let dnf = dnf t in
             let rec valid_types acc dnf = match dnf with

@@ -51,6 +51,7 @@ let type_expr_to_typ env t =
     in normalize_typ (descr (aux t))
 
 let define_atom env atom =
+    let atom = String.capitalize_ascii atom in
     if StrMap.mem atom env
     then failwith "Atom already defined!"
     else StrMap.add atom (cons (mk_atom atom)) env
@@ -67,6 +68,12 @@ let define_types env defs =
         define_typ (StrMap.find name env) t
     in
     List.iter define_type defs ; env
+
+let get_atom env atom =
+    let atom = String.capitalize_ascii atom in
+    if StrMap.mem atom env
+    then descr (StrMap.find atom env)
+    else failwith "Atom not found!"
 
 (* Operations on types *)
 
