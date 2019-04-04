@@ -56,6 +56,8 @@ let mk_new_typ = CD.Types.make
 
 let define_typ = CD.Types.define
 
+let normalize_typ = CD.Types.normalize
+
 
 let mk_times = CD.Types.times
 
