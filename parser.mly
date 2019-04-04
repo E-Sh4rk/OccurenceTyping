@@ -1,6 +1,7 @@
 %{ (* Emacs, use -*- tuareg -*- to open this file. *)
 
    open Ast
+   open Types_additions
 
    (*let parsing_error pos msg =
      Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;

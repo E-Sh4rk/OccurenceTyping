@@ -1,4 +1,5 @@
 
+open Types_additions
 type typ = Cduce.typ
 
 type const =
@@ -12,19 +13,6 @@ type projection = Fst | Snd
 
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
-
-type type_base =
-    TInt | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
-
-type type_expr =
-| TBase of type_base
-| TCustom of string
-| TPair of type_expr * type_expr
-| TArrow of type_expr * type_expr
-| TCup of type_expr * type_expr
-| TCap of type_expr * type_expr
-| TDiff of type_expr * type_expr
-| TNeg of type_expr
 
 type ('t, 'v) expr' =
 | Const of const
@@ -48,10 +36,6 @@ end
 module ExprMap : Map.S with type key = expr
 
 val unique_varid : unit -> varid
-
-val type_base_to_typ : type_base -> typ
-
-val type_expr_to_typ : type_expr -> typ
 
 val parser_expr_to_expr : parser_expr -> expr
 
