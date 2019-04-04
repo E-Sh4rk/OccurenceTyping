@@ -18,7 +18,9 @@ let decimal = ['0'-'9']+
 
 let fn = (decimal "." decimal?) | (decimal? "." decimal)
 
-let char = '\'' ['a'-'z''A'-'Z''0'-'9''_'' '] '\''
+let char = '\'' ['a'-'z''A'-'Z''0'-'9''_'' ''-'] '\''
+
+let string = '"' ['a'-'z''A'-'Z''0'-'9''_'' ''-']* '"'
 
 rule token = parse
 | newline { enter_newline lexbuf |> token }
@@ -62,6 +64,7 @@ rule token = parse
 | "true"  { LBOOL true }
 | "false" { LBOOL false }
 | "()"    { LUNIT }
+| string as s { LSTRING (String.sub s 1 ((String.length s) - 2)) }
 | char as c { LCHAR (c.[1]) }
 | id as s { ID s }
 | eof     { EOF }

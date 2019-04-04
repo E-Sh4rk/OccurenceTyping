@@ -4,7 +4,7 @@ open Ast
 open Types_additions
 
 type dir =
-    | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg
+    | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg of string
 
 type path = dir list
 
@@ -19,7 +19,7 @@ let rec follow_path e p =
     | Pair (_,e), RPair::p
     | Projection (Fst, e), PFst::p
     | Projection (Snd, e), PSnd::p
-    | Debug e, Dbg::p
+    | Debug (_, e), (Dbg _)::p
     -> follow_path e p
     (* Don't forget to add things here! *)
     | _ -> raise Invalid_path
@@ -49,7 +49,7 @@ let eliminate_all_lets e =
             Let (v, e1, aux (IntMap.add v e1 env) e2)
         | Pair (e1, e2) -> Pair (aux env e1, aux env e2)
         | Projection (p, e) -> Projection (p, aux env e)
-        | Debug e -> Debug (aux env e)
+        | Debug (str, e) -> Debug (str, aux env e)
     in
     aux IntMap.empty e
 
@@ -68,8 +68,8 @@ let rec all_paths_for_expr rev_prefix e =
         (List.rev rev_prefix)::(all_paths_for_expr (PFst::rev_prefix) e)
     | Projection (Snd, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr (PSnd::rev_prefix) e)
-    | Debug e ->
-        (List.rev rev_prefix)::(all_paths_for_expr (Dbg::rev_prefix) e)
+    | Debug (str, e) ->
+        (List.rev rev_prefix)::(all_paths_for_expr ((Dbg str)::rev_prefix) e)
     | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
@@ -86,7 +86,7 @@ let rec back_typeof_rev self (memo_t, env, e, t, p) =
     | RPair::p -> pi2 (self p)
     | PFst::p -> mk_times (cons (self p)) any_node
     | PSnd::p -> mk_times any_node (cons (self p))
-    | Dbg::p -> let res = self p in Format.printf "Refinement: " ; Utils.print_type res; res
+    | (Dbg str)::p -> let res = self p in Format.printf "%s (back_typeof): " str ; Utils.print_type res; res
     in
     cap t (typeof p)
 
@@ -154,9 +154,9 @@ and typeof_raw self (env, e) =
         | Projection (Snd, e) ->
             let t = self (env, e) in
             if subtype t pair_any then pi2 t else raise Ill_typed
-        | Debug e ->
+        | Debug (str, e) ->
             let res = self (env, e) in
-            Format.printf "Base type: " ; Utils.print_type res ;
+            Format.printf "%s (typeof): " str ; Utils.print_type res ;
             res
     end
 

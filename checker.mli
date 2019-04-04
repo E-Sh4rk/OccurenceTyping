@@ -2,7 +2,7 @@
 open Ast
 
 type dir =
-    | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg
+    | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg of string
 
 type path = dir list
 

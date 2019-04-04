@@ -22,7 +22,7 @@ type 'var expr' =
     | Let of 'var * 'var expr' * 'var expr'
     | Pair of 'var expr' * 'var expr'
     | Projection of projection * 'var expr'
-    | Debug of 'var expr'
+    | Debug of string * 'var expr'
 
 type parser_expr = varname expr'
 type expr = varid expr'

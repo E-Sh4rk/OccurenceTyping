@@ -35,6 +35,7 @@
 %token<int> LINT
 %token<bool> LBOOL
 %token<char> LCHAR
+%token<string> LSTRING
 %token LUNIT
 %token MAGIC
 
@@ -70,7 +71,7 @@ simple_term:
   a=simple_term b=atomic_term { App (a, b) }
 | FST a=atomic_term { Projection (Fst, a) }
 | SND a=atomic_term { Projection (Snd, a) }
-| DEBUG a=atomic_term { Debug a }
+| DEBUG str=LSTRING a=atomic_term { Debug (str, a) }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
