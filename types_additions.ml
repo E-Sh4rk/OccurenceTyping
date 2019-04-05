@@ -53,13 +53,13 @@ let type_expr_to_typ env t =
 let define_atom env atom =
     let atom = String.capitalize_ascii atom in
     if StrMap.mem atom env
-    then failwith "Atom already defined!"
+    then failwith (Printf.sprintf "Atom %s already defined!" atom)
     else StrMap.add atom (cons (mk_atom atom)) env
 
 let define_types env defs =
     let declare_type env (name,_) =
         if StrMap.mem name env
-        then failwith "Type already defined!"
+        then failwith (Printf.sprintf "Type %s already defined!" name)
         else StrMap.add name (mk_new_typ ()) env
     in
     let env = List.fold_left declare_type env defs in
@@ -73,7 +73,7 @@ let get_atom env atom =
     let atom = String.capitalize_ascii atom in
     if StrMap.mem atom env
     then descr (StrMap.find atom env)
-    else failwith "Atom not found!"
+    else failwith (Printf.sprintf "Atom %s not found!" atom)
 
 (* Operations on types *)
 

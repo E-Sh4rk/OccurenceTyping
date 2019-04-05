@@ -53,3 +53,8 @@ let two_steps =
                         if fst (f x) is Int then x
                         else 0
                 else 0
+
+(* Example with recursive types and lists *)
+
+atom nil
+type X = Nil | (Any * X)

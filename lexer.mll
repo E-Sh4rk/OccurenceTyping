@@ -26,6 +26,7 @@ rule token = parse
 | newline { enter_newline lexbuf |> token }
 | blank   { token lexbuf }
 | "atoms" { ATOMS }
+| "atom" { ATOMS }
 | "type"  { TYPE }
 | "and"   { TYPE_AND }
 | "(*"    { comment 0 lexbuf }
