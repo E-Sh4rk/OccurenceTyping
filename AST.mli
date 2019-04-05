@@ -36,11 +36,15 @@ module Expr : sig
 end
 module ExprMap : Map.S with type key = expr
 
+type id_map = int StrMap.t
+
+val empty_id_map : id_map
+
 val unique_varid : unit -> varid
 
 val parser_const_to_const : type_env -> type_expr const -> typ const
 
-val parser_expr_to_expr : type_env -> parser_expr -> expr
+val parser_expr_to_expr : type_env -> id_map -> parser_expr -> expr
 
 val substitute_var : 'a -> ('b, 'a) expr' -> ('b, 'a) expr' -> ('b, 'a) expr'
 

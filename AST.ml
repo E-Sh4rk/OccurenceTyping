@@ -36,14 +36,16 @@ module Expr = struct
 end
 module ExprMap = Map.Make(Expr)
 
+type id_map = int StrMap.t
+
+let empty_id_map = StrMap.empty
+
 let unique_varid =
     let last_id = ref 0 in
     fun _ -> (
         last_id := !last_id + 1 ;
         !last_id
     )
-
-module StrMap = Map.Make(String)
 
 let parser_const_to_const tenv c =
     match c with
@@ -54,7 +56,7 @@ let parser_const_to_const tenv c =
     | Int i -> Int i
     | Char c -> Char c
 
-let parser_expr_to_expr tenv e =
+let parser_expr_to_expr tenv id_map e =
     let rec aux env e =
         match e with
         | Const c -> Const (parser_const_to_const tenv c)
@@ -79,7 +81,7 @@ let parser_expr_to_expr tenv e =
         | Projection (p, e) -> Projection (p, aux env e)
         | Debug (str, e) -> Debug (str, aux env e)
     in
-    aux StrMap.empty e
+    aux id_map e
 
 let rec substitute_var v ve e =
     match e with
