@@ -98,13 +98,13 @@ let rec substitute_var v ve e =
     | Projection (p, e) -> Projection (p, substitute_var v ve e)
     | Debug (str, e) -> Debug (str, substitute_var v ve e)
 
-(* TODO: more precise types *)
 let const_to_typ c =
     match c with
     | Magic -> Cduce.empty
-    | Bool _ -> Cduce.bool_typ
-    | Int _ -> Cduce.int_typ
-    | Char _ -> Cduce.char_typ
+    | Bool true -> Cduce.true_typ
+    | Bool false -> Cduce.false_typ
+    | Int i -> Cduce.interval (Some i) (Some i)
+    | Char c -> Cduce.single_char c
     | Unit -> Cduce.unit_typ
     | Atom t -> t
 
