@@ -45,7 +45,7 @@ let let_pairs_ok =
 
 let two_steps =
 
-        let f = fun x : (( (Any \ Int) -> ((Any * Any) \ (Int * Int)) ) & (Int -> (Int * Int))) -> magic
+        let f = fun x : (( Any\Int -> (Any * Any)\(Int * Int) ) & ( Int -> Int*Int )) -> magic
         in
         fun x : (Any -> Int) ->
                 if snd (f x) is Int
@@ -57,4 +57,15 @@ let two_steps =
 (* Example with recursive types and lists *)
 
 atom nil
-type X = Nil | (Any * X)
+type List = Nil | (Any * List)
+type IntList = Nil | (Int * IntList)
+type BoolList = Nil | (Bool * BoolList)
+
+let lists =
+
+        fun lst : (BoolList|IntList -> IntList) ->
+                if lst is Nil
+                then nil
+                else if fst lst is Int
+                then lst
+                else nil

@@ -48,7 +48,7 @@ let type_expr_to_typ env t =
             let t2 = descr (aux t2) in
             cons (diff t1 t2)
         | TNeg t -> cons (neg (descr (aux t)))
-    in normalize_typ (descr (aux t))
+    in descr (aux t)
 
 let define_atom env atom =
     let atom = String.capitalize_ascii atom in
@@ -67,6 +67,7 @@ let define_types env defs =
         let t = type_expr_to_typ env decl in
         define_typ (StrMap.find name env) t
     in
+    (* TODO: normalize? *)
     List.iter define_type defs ; env
 
 let get_atom env atom =
