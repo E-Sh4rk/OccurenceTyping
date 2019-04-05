@@ -69,3 +69,21 @@ let lists =
                 else if fst lst is Int
                 then lst
                 else nil
+
+type BIUList = Nil | (Bool * IUList)
+and  IUList  = Nil | (Int * UList)
+and  UList   = Nil | (Unit * BIUList)
+
+let regex_lists =
+
+        fun lst : ((BIUList -> IUList) & (IUList -> UList) & (UList -> BIUList)) ->
+                if lst is Nil
+                then nil
+                else snd lst
+
+let regex_fail =
+
+        fun lst : (BIUList -> IntList) ->
+                if lst is Nil
+                then nil
+                else snd lst
