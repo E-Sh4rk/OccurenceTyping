@@ -48,6 +48,8 @@ val parser_expr_to_expr : type_env -> id_map -> parser_expr -> expr
 
 val substitute_var : 'a -> ('b, 'a) expr' -> ('b, 'a) expr' -> ('b, 'a) expr'
 
+val const_to_typ : typ const -> typ
+
 type parser_element =
 | Definition of (string * parser_expr)
 | Atoms of string list

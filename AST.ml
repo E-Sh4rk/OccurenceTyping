@@ -98,6 +98,16 @@ let rec substitute_var v ve e =
     | Projection (p, e) -> Projection (p, substitute_var v ve e)
     | Debug (str, e) -> Debug (str, substitute_var v ve e)
 
+(* TODO: more precise types *)
+let const_to_typ c =
+    match c with
+    | Magic -> Cduce.empty
+    | Bool _ -> Cduce.bool_typ
+    | Int _ -> Cduce.int_typ
+    | Char _ -> Cduce.char_typ
+    | Unit -> Cduce.unit_typ
+    | Atom t -> t
+
 type parser_element =
 | Definition of (string * parser_expr)
 | Atoms of string list
