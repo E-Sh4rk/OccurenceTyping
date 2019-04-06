@@ -74,7 +74,7 @@ type BIUList = Nil | (Bool * IUList)
 and  IUList  = Nil | (Int * UList)
 and  UList   = Nil | (Unit * BIUList)
 
-let regex_lists =
+let regex_next =
 
         fun lst : ((BIUList -> IUList) & (IUList -> UList) & (UList -> BIUList)) ->
                 if lst is Nil
@@ -87,3 +87,19 @@ let regex_fail =
                 if lst is Nil
                 then nil
                 else snd lst
+
+let custom_sum =
+
+        rec self x : (BIUList -> Int) ->
+                if x is Nil
+                then 0
+                else if snd x is Nil
+                then 0
+                else
+                        let b = fst x in
+                        let tl = snd x in
+                        let i = fst tl in
+                        let tl = if snd tl is Nil then nil else snd (snd tl) in
+                        if b is True
+                        then plus i (self tl)
+                        else self tl

@@ -116,20 +116,14 @@ and typeof_raw self (env, e) =
         | Some s -> ExprMap.add (Var s) t env
         in
         let dnf = dnf t in
-        let rec valid_types acc dnf = match dnf with
-        | [] -> acc
-        | ts::dnf ->
+        let valid_type conj =
             let is_valid (s,t) =
                 let env = ExprMap.add (Var v) s env in
                 subtype (self (env, e)) t
             in
-            if List.for_all is_valid ts then
-                let fs = List.map (fun (s,t) -> mk_arrow (cons s) (cons t)) ts in
-                valid_types ((conj fs)::acc) dnf
-            else valid_types acc dnf
+            List.for_all is_valid conj
         in
-        let ts = valid_types [] dnf in
-        if ts = [] then raise Ill_typed else conj ts
+        if List.exists valid_type dnf then t else raise Ill_typed
     in
 
     match ExprMap.find_opt e env with
