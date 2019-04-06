@@ -43,6 +43,7 @@ rule token = parse
 | "then"  { THEN }
 | "else"  { ELSE }
 | "fun"   { FUN }
+| "rec"   { REC }
 | "let"   { LET }
 | "in"    { IN }
 | "fst"   { FST }

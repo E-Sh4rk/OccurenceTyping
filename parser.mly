@@ -25,7 +25,7 @@
 %}
 
 %token EOF
-%token FUN LET IN FST SND DEBUG
+%token FUN REC LET IN FST SND DEBUG
 %token IF IS THEN ELSE
 %token LPAREN RPAREN COLON EQUAL COMMA
 %token ARROW AND OR NEG DIFF
@@ -106,10 +106,16 @@ literal:
 | LUNIT    { Unit }
 | MAGIC    { Magic }
 
-%inline abstraction: FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
+%inline abstraction:
+  FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
   else Lambda (ty, List.hd vs, t)
+}
+| REC self=identifier vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
+{
+  if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
+  else RecLambda (self, ty, List.hd vs, t)
 }
 
 %inline definition: LET i=identifier EQUAL t=term
