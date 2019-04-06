@@ -33,7 +33,7 @@ let is_bottom env =
     List.exists is_bottom (ExprMap.bindings env)
 
 
-exception Ill_typed
+exception Ill_typed of string
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
 
@@ -123,7 +123,8 @@ and typeof_raw self (env, e) =
             in
             List.for_all is_valid conj
         in
-        if List.exists valid_type dnf then t else raise Ill_typed
+        if List.exists valid_type dnf then t
+        else raise (Ill_typed "Incorrect type for lambda-abstraction.")
     in
 
     match ExprMap.find_opt e env with
@@ -136,7 +137,8 @@ and typeof_raw self (env, e) =
         | App (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
-            if subtype t2 (domain t1) then apply t1 t2 else raise Ill_typed
+            if subtype t2 (domain t1) then apply t1 t2
+            else raise (Ill_typed "Bad domain for the application.")
         | Ite (e,t,e1,e2) ->
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
@@ -154,10 +156,12 @@ and typeof_raw self (env, e) =
             mk_times (cons t1) (cons t2)
         | Projection (Fst, e) ->
             let t = self (env, e) in
-            if subtype t pair_any then pi1 t else raise Ill_typed
+            if subtype t pair_any then pi1 t
+            else raise (Ill_typed "Fst can only be applied to a pair.")
         | Projection (Snd, e) ->
             let t = self (env, e) in
-            if subtype t pair_any then pi2 t else raise Ill_typed
+            if subtype t pair_any then pi2 t
+            else raise (Ill_typed "Snd can only be applied to a pair.")
         | Debug (str, e) ->
             let res = self (env, e) in
             Format.printf "%s (typeof): " str ; Utils.print_type res ;

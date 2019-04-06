@@ -18,7 +18,7 @@ let _ =
         let idm = StrMap.add name id idm in
         let env = ExprMap.add (Var id) typ env in
         Utils.print_type typ ; (idm, env)
-      with Ill_typed -> Format.printf "Ill typed!\n" ; (idm,env)
+      with Ill_typed str -> Format.printf "Ill typed: %s\n" str ; (idm,env)
       end 
     in
     let treat_elem (tenv,idm,env) elem =

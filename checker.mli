@@ -14,7 +14,7 @@ type env = typ ExprMap.t
 val empty_env : env
 val is_bottom : env -> bool
 
-exception Ill_typed
+exception Ill_typed of string
 
 val back_typeof : env -> expr -> typ -> path -> typ (* Equivalent to Env in the paper *)
 val typeof : env -> expr -> typ
