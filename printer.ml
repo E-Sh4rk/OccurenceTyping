@@ -18,6 +18,8 @@ let rec string_of_expr e =
   | Var v -> Printf.sprintf "v%s" (string_of_varid v)
   | Lambda (_,v,e) ->
     Printf.sprintf "fun %s -> %s" (string_of_varid v) (string_of_expr e)
+  | RecLambda (s,_,v,e) ->
+    Printf.sprintf "rec %s %s -> %s" (string_of_varid s) (string_of_varid v) (string_of_expr e)
   | Ite (e,t,e1,e2) ->
     Printf.sprintf "if %s is %s then %s else %s" (string_of_expr e) (Cduce.string_of_type t)
       (string_of_expr e1) (string_of_expr e2)

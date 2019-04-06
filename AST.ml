@@ -19,6 +19,7 @@ type ('t, 'v) expr' =
 | Const of 't const
 | Var of 'v
 | Lambda of 't * 'v * ('t, 'v) expr'
+| RecLambda of 'v * 't * 'v * ('t, 'v) expr'
 | Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
 | App of ('t, 'v) expr' * ('t, 'v) expr'
 | Let of 'v * ('t, 'v) expr' * ('t, 'v) expr'
@@ -68,6 +69,12 @@ let parser_expr_to_expr tenv id_map e =
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
             Lambda (type_expr_to_typ tenv t, varid, aux env e)
+        | RecLambda (recstr,t,str,e) ->
+            let recvarid = unique_varid () in
+            let varid = unique_varid () in
+            let env = StrMap.add recstr recvarid env in
+            let env = StrMap.add str varid env in
+            RecLambda (recvarid, type_expr_to_typ tenv t, varid, aux env e)
         | Ite (e, t, e1, e2) ->
             Ite (aux env e, type_expr_to_typ tenv t, aux env e1, aux env e2)
         | App (e1, e2) ->
@@ -90,6 +97,8 @@ let rec substitute_var v ve e =
     | Var v' -> Var v'
     | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
     | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
+    | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
+    | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
     | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
     | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
     | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)

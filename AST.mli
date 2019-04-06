@@ -19,6 +19,7 @@ type ('t, 'v) expr' =
 | Const of 't const
 | Var of 'v
 | Lambda of 't * 'v * ('t, 'v) expr'
+| RecLambda of 'v * 't * 'v * ('t, 'v) expr'
 | Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
 | App of ('t, 'v) expr' * ('t, 'v) expr'
 | Let of 'v * ('t, 'v) expr' * ('t, 'v) expr'

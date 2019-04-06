@@ -21,8 +21,10 @@ let rec follow_path e p =
     | Projection (Snd, e), PSnd::p
     | Debug (_, e), (Dbg _)::p
     -> follow_path e p
-    (* Don't forget to add things here! *)
-    | _ -> raise Invalid_path
+    | _, LApp::_ | _, RApp::_
+    | _, LPair::_ | _, RPair::_
+    | _, PFst::_ | _, PSnd::_
+    | _, (Dbg _)::_ -> raise Invalid_path
 
 type env = typ ExprMap.t
 let empty_env = ExprMap.empty
@@ -42,6 +44,9 @@ let eliminate_all_lets e =
         | Var v when IntMap.mem v env -> IntMap.find v env
         | Var v -> Var v
         | Lambda (t, v, e) -> Lambda (t, v, aux (IntMap.remove v env) e)
+        | RecLambda (s, t, v, e) ->
+            let env = IntMap.remove v (IntMap.remove s env) in
+            RecLambda (s, t, v, aux env e)
         | Ite (e, t, e1, e2) -> Ite (aux env e, t, aux env e1, aux env e2)
         | App (e1, e2) -> App (aux env e1, aux env e2)
         | Let (v, e1, e2) ->
@@ -70,7 +75,7 @@ let rec all_paths_for_expr rev_prefix e =
         (List.rev rev_prefix)::(all_paths_for_expr (PSnd::rev_prefix) e)
     | Debug (str, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr ((Dbg str)::rev_prefix) e)
-    | Const _ | Var _ | Lambda _ | Ite _ -> [List.rev rev_prefix]
+    | Const _ | Var _ | Lambda _ | RecLambda _ | Ite _ -> [List.rev rev_prefix]
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
@@ -104,27 +109,36 @@ and optimized_back_typeof env e t ps =
 and typeof_raw self (env, e) =
     (* The rule that states that 'every expression has type bottom in the bottom environment'
        is integrated in the Ite case for efficiency reasons. *)
+
+    let type_lambda (s,t,v,e) =
+        let env = match s with
+        | None -> env
+        | Some s -> ExprMap.add (Var s) t env
+        in
+        let dnf = dnf t in
+        let rec valid_types acc dnf = match dnf with
+        | [] -> acc
+        | ts::dnf ->
+            let is_valid (s,t) =
+                let env = ExprMap.add (Var v) s env in
+                subtype (self (env, e)) t
+            in
+            if List.for_all is_valid ts then
+                let fs = List.map (fun (s,t) -> mk_arrow (cons s) (cons t)) ts in
+                valid_types ((conj fs)::acc) dnf
+            else valid_types acc dnf
+        in
+        let ts = valid_types [] dnf in
+        if ts = [] then raise Ill_typed else conj ts
+    in
+
     match ExprMap.find_opt e env with
     | Some t -> t
     | None ->
     begin match e with
         | Const c -> const_to_typ c
-        | Lambda (t,v,e) ->
-            let dnf = dnf t in
-            let rec valid_types acc dnf = match dnf with
-            | [] -> acc
-            | ts::dnf ->
-                let is_valid (s,t) =
-                    let new_env = ExprMap.add (Var v) s env in
-                    subtype (self (new_env, e)) t
-                in
-                if List.for_all is_valid ts then
-                    let fs = List.map (fun (s,t) -> mk_arrow (cons s) (cons t)) ts in
-                    valid_types ((conj fs)::acc) dnf
-                else valid_types acc dnf
-            in
-            let ts = valid_types [] dnf in
-            if ts = [] then raise Ill_typed else conj ts
+        | Lambda (t,v,e) -> type_lambda (None,t,v,e)
+        | RecLambda (s,t,v,e) -> type_lambda (Some s,t,v,e)
         | App (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
