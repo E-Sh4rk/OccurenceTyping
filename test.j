@@ -32,6 +32,15 @@ let basic_fail =
     fun x : ((Int | Bool) -> Int) ->
         if x is Any then incr x else bti x
 
+(* Example with intervals *)
+
+let interval =
+
+        fun x : ([0;5] -> [-1;-1] | [1;1]) ->
+                if x is [0;2] then -1
+                else if x is [3;5] then 1
+                else false
+
 (* Example with Let and Pairs *)
 
 let let_pairs_ok =

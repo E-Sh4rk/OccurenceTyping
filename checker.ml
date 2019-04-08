@@ -124,7 +124,7 @@ and typeof_raw self (env, e) =
             List.for_all is_valid conj
         in
         if List.exists valid_type dnf then t
-        else raise (Ill_typed "Incorrect type for lambda-abstraction.")
+        else raise (Ill_typed "Wrong type for the lambda-abstraction.")
     in
 
     match ExprMap.find_opt e env with

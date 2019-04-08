@@ -16,7 +16,9 @@ let type_id = ['A'-'Z']['a'-'z''A'-'Z''0'-'9''_']*
 
 let decimal = ['0'-'9']+
 
-let fn = (decimal "." decimal?) | (decimal? "." decimal)
+let int = '-'? decimal
+
+let fn = (int "." decimal?) | (int? "." decimal)
 
 let char = '\'' ['a'-'z''A'-'Z''0'-'9''_'' ''-'] '\''
 
@@ -26,7 +28,7 @@ rule token = parse
 | newline { enter_newline lexbuf |> token }
 | blank   { token lexbuf }
 | "atoms" { ATOMS }
-| "atom" { ATOMS }
+| "atom"  { ATOMS }
 | "type"  { TYPE }
 | "and"   { TYPE_AND }
 | "(*"    { comment 0 lexbuf }
@@ -60,11 +62,14 @@ rule token = parse
 | "False" { FALSE }
 | "("     { LPAREN }
 | ")"     { RPAREN }
+| "["     { LBRACKET }
+| "]"     { RBRACKET }
+| ";"     { SEMICOLON }
 | "*"     { TIMES }
 (*| "-"     { MINUS }
 | "+"     { PLUS  }*)
 | "magic" { MAGIC }
-| decimal as i { LINT (int_of_string i) }
+| int as i { LINT (int_of_string i) }
 (*| fn as f { LFLOAT (float_of_string f) }*)
 | "true"  { LBOOL true }
 | "false" { LBOOL false }

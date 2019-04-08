@@ -4,7 +4,8 @@ open Cduce
 (* Construction of types *)
 
 type type_base =
-    TInt | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
+    TInt of int option * int option
+    | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
 
 type type_expr =
 | TBase of type_base

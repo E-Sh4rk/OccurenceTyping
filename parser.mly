@@ -32,6 +32,7 @@
 %token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE UNIT
 %token TIMES (*PLUS MINUS*)
 %token ATOMS TYPE TYPE_AND
+%token LBRACKET RBRACKET SEMICOLON
 %token<string> ID
 %token<string> TID
 (*%token<float> LFLOAT*)
@@ -142,7 +143,8 @@ typ:
 
 type_constant:
 (*  FLOAT { TyFloat }*)
-  INT { TInt }
+  INT { TInt (None, None) }
+| i=type_interval { i }
 | CHAR { TChar }
 | BOOL { TBool }
 | TRUE { TTrue }
@@ -150,6 +152,12 @@ type_constant:
 | UNIT { TUnit }
 | EMPTY { TEmpty }
 | ANY { TAny }
+
+type_interval:
+  LBRACKET lb=LINT SEMICOLON ub=LINT RBRACKET { TInt (Some lb, Some ub) }
+| LBRACKET SEMICOLON ub=LINT RBRACKET { TInt (None, Some ub) }
+| LBRACKET lb=LINT SEMICOLON RBRACKET { TInt (Some lb, None) }
+| LBRACKET SEMICOLON RBRACKET { TInt (None, None) }
 
 (*%inline located(X): x=X {
   Position.with_poss $startpos $endpos x

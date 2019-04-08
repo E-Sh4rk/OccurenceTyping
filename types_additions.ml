@@ -4,7 +4,8 @@ open Cduce
 (* Construction of types *)
 
 type type_base =
-    TInt | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
+    TInt of int option * int option
+    | TBool | TTrue | TFalse | TUnit | TChar | TAny | TEmpty
 
 type type_expr =
 | TBase of type_base
@@ -23,7 +24,8 @@ let empty_tenv = StrMap.empty
 
 let type_base_to_typ t =
     match t with
-    | TInt -> Cduce.int_typ | TBool -> Cduce.bool_typ
+    | TInt (lb,ub) -> Cduce.interval lb ub
+    | TBool -> Cduce.bool_typ
     | TTrue -> Cduce.true_typ | TFalse -> Cduce.false_typ
     | TUnit -> Cduce.unit_typ | TChar -> Cduce.char_typ
     | TAny -> Cduce.any | TEmpty -> Cduce.empty
