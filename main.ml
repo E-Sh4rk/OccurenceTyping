@@ -6,7 +6,7 @@ open Checker
 open IO
 
 let _ =
-    let fn = ref "test.j" in
+    let fn = ref "test.ml" in
     if Array.length Sys.argv > 1 then fn := Sys.argv.(1) ;
 
     let program = parse_program_file !fn in
