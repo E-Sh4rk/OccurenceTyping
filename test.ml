@@ -112,3 +112,28 @@ let custom_sum =
                         if b is True
                         then plus i (self tl)
                         else self tl
+
+
+(* Some tests of the paper *)
+
+let appl1_fail =
+
+   fun x1 : ( ((Int -> Int) | (Bool -> Bool)) -> (Int | Bool) -> (Int | Bool)) ->
+     fun x2 : ( (Int | Bool) -> (Int | Bool) ) ->
+         if (x1 x2) is Int then plus x2 (x1 x2) else land x2 (x1 x2)
+
+let appl1_ok =
+
+   fun x1 : ( ((Int -> Int) & (Bool -> Bool)) -> (Int | Bool) -> (Int | Bool)) ->
+     fun x2 : ( (Int | Bool) -> (Int | Bool) ) ->
+         if (x1 x2) is Int then plus x2 (x1 x2) else land x2 (x1 x2)
+
+let appl2 =
+
+   let bti =
+         fun b : (Bool -> Int) -> magic
+   in
+
+   fun x1 : ( (( Int | Char -> Int) & (Bool | Char -> Bool)) -> Char -> Int) ->
+        fun x2 : (Char -> Int) ->
+                if (x1 x2) is Int then incr (x1(x1 x2)) else bti (x1(x1 x2))
