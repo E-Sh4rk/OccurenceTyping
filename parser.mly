@@ -7,18 +7,21 @@
      Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;
      exit 1
 
+   let annot e =
+    (new_dummy_annot (), e)
+
    let var_or_primitive = function
      (*| Id "cos" -> Primitive Cos
      | Id "sin" -> Primitive Sin
      | Id "exp" -> Primitive Exp
      | Id "inv" -> Primitive Inv
      | Id "neg" -> Primitive Neg*)
-     | x -> Var (new_dummy_annot (), x)
+     | x -> annot (Var x)
 
    let rec tuple = function
      | [] -> assert false
      | [x] -> x
-     | x :: xs -> Pair (new_dummy_annot (), tuple xs, x)
+     | x :: xs -> annot (Pair (tuple xs, x))
 
    let tuple xs = tuple (List.rev xs)
 
@@ -87,22 +90,22 @@ name_and_typ: name=TID EQUAL t=typ { (name, t) }
 
 term:
   a=abstraction { a }
-| d=definition IN t=term { Let (new_dummy_annot (), fst d, snd d, t) }
+| d=definition IN t=term { annot (Let (fst d, snd d, t)) }
 (*| lhs=term b=binop rhs=term { App (App (Primitive b, lhs), rhs) }*)
 | t=simple_term { t }
-| IF t=term IS ty=typ THEN t1=term ELSE t2=term { Ite (new_dummy_annot (),t,ty,t1,t2) }
+| IF t=term IS ty=typ THEN t1=term ELSE t2=term { annot (Ite (t,ty,t1,t2)) }
 
 simple_term:
-  a=simple_term b=atomic_term { App (new_dummy_annot (), a, b) }
-| FST a=atomic_term { Projection (new_dummy_annot (), Fst, a) }
-| SND a=atomic_term { Projection (new_dummy_annot (), Snd, a) }
-| DEBUG str=LSTRING a=atomic_term { Debug (new_dummy_annot (), str, a) }
+  a=simple_term b=atomic_term { annot (App (a, b)) }
+| FST a=atomic_term { annot (Projection (Fst, a)) }
+| SND a=atomic_term { annot (Projection (Snd, a)) }
+| DEBUG str=LSTRING a=atomic_term { annot (Debug (str, a)) }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
 atomic_term:
   x=identifier { var_or_primitive x }
-| l=literal { Const (new_dummy_annot (), l) }
+| l=literal { annot (Const l) }
 | LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }
 
 literal:
@@ -117,12 +120,12 @@ literal:
   FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
-  else Lambda (new_dummy_annot (), ty, List.hd vs, t)
+  else annot (Lambda (ty, List.hd vs, t))
 }
 | REC self=identifier vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
-  else RecLambda (new_dummy_annot (), self, ty, List.hd vs, t)
+  else annot (RecLambda (self, ty, List.hd vs, t))
 }
 
 %inline definition: LET i=identifier EQUAL t=term

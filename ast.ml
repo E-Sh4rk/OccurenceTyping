@@ -18,17 +18,19 @@ type exprid = int
 
 type annotation = int * Lexing.position
 
-type ('a, 'typ, 'v) t =
-| Const of 'a * 'typ const
-| Var of 'a * 'v
-| Lambda of 'a * 'typ * 'v * ('a, 'typ, 'v) t
-| RecLambda of 'a * 'v * 'typ * 'v * ('a, 'typ, 'v) t
-| Ite of 'a * ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| App of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Let of 'a * 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Pair of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Projection of 'a * projection * ('a, 'typ, 'v) t
-| Debug of 'a * string * ('a, 'typ, 'v) t
+type ('a, 'typ, 'v) ast =
+| Const of 'typ const
+| Var of 'v
+| Lambda of 'typ * 'v * ('a, 'typ, 'v) t
+| RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
+| Ite of ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| App of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Pair of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Projection of projection * ('a, 'typ, 'v) t
+| Debug of string * ('a, 'typ, 'v) t
+
+and ('a, 'typ, 'v) t = 'a * ('a, 'typ, 'v) ast
 
 type annot_expr = (annotation, typ, varid) t
 type expr = (unit, typ, varid) t
@@ -72,67 +74,78 @@ let parser_const_to_const tenv c =
     | Char c -> Char c
 
 let parser_expr_to_annot_expr tenv id_map e =
-    let rec aux env e =
-        match e with
-        | Const (a,c) -> Const (a,parser_const_to_const tenv c)
-        | Var (a,str) ->
+    let rec aux env (a,e) =
+        let e = match e with
+        | Const c -> Const (parser_const_to_const tenv c)
+        | Var str ->
             if StrMap.mem str env
-            then Var (a,StrMap.find str env)
-            else Const (a, Atom (get_atom tenv str))
-        | Lambda (a,t,str,e) ->
+            then Var (StrMap.find str env)
+            else Const (Atom (get_atom tenv str))
+        | Lambda (t,str,e) ->
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
-            Lambda (a,type_expr_to_typ tenv t, varid, aux env e)
-        | RecLambda (a,recstr,t,str,e) ->
+            Lambda (type_expr_to_typ tenv t, varid, aux env e)
+        | RecLambda (recstr,t,str,e) ->
             let recvarid = unique_varid () in
             let varid = unique_varid () in
             let env = StrMap.add recstr recvarid env in
             let env = StrMap.add str varid env in
-            RecLambda (a,recvarid, type_expr_to_typ tenv t, varid, aux env e)
-        | Ite (a, e, t, e1, e2) ->
-            Ite (a, aux env e, type_expr_to_typ tenv t, aux env e1, aux env e2)
-        | App (a, e1, e2) ->
-            App (a, aux env e1, aux env e2)
-        | Let (a, str, e1, e2) ->
+            RecLambda (recvarid, type_expr_to_typ tenv t, varid, aux env e)
+        | Ite (e, t, e1, e2) ->
+            Ite (aux env e, type_expr_to_typ tenv t, aux env e1, aux env e2)
+        | App (e1, e2) ->
+            App (aux env e1, aux env e2)
+        | Let (str, e1, e2) ->
             let varid = unique_varid () in
             let env' = StrMap.add str varid env in
-            Let (a, varid, aux env e1, aux env' e2)
-        | Pair (a, e1, e2) ->
-            Pair (a, aux env e1, aux env e2)
-        | Projection (a, p, e) -> Projection (a, p, aux env e)
-        | Debug (a, str, e) -> Debug (a, str, aux env e)
+            Let (varid, aux env e1, aux env' e2)
+        | Pair (e1, e2) ->
+            Pair (aux env e1, aux env e2)
+        | Projection (p, e) -> Projection (p, aux env e)
+        | Debug (str, e) -> Debug (str, aux env e)
+        in
+        (a,e)
     in
     aux id_map e
 
-let rec annot_expr_to_expr e =
-    match e with
-    | Const (_, c) -> Const ((), c)
-    | Var (_, v)  -> Var ((), v)
-    | Lambda (_, t, v, e) -> Lambda ((), t, v, annot_expr_to_expr e)
-    | RecLambda (_, s, t, v, e) -> RecLambda ((), s, t, v, annot_expr_to_expr e)
-    | Ite (_, e, t, e1, e2) -> Ite ((), annot_expr_to_expr e, t, annot_expr_to_expr e1, annot_expr_to_expr e2)
-    | App (_, e1, e2) -> App ((), annot_expr_to_expr e1, annot_expr_to_expr e2)
-    | Let (_, v, e1, e2) -> Let ((), v, annot_expr_to_expr e1, annot_expr_to_expr e2)
-    | Pair (_, e1, e2) -> Pair ((), annot_expr_to_expr e1, annot_expr_to_expr e2)
-    | Projection (_, p, e) -> Projection ((), p, annot_expr_to_expr e)
-    | Debug (_, str, e) -> Debug ((), str, annot_expr_to_expr e)
+let rec unannot (_,e) =
+    let e = match e with
+    | Const c -> Const c
+    | Var v  -> Var v
+    | Lambda (t, v, e) -> Lambda (t, v, unannot e)
+    | RecLambda (s, t, v, e) -> RecLambda (s, t, v, unannot e)
+    | Ite (e, t, e1, e2) -> Ite (unannot e, t, unannot e1, unannot e2)
+    | App (e1, e2) -> App (unannot e1, unannot e2)
+    | Let (v, e1, e2) -> Let (v, unannot e1, unannot e2)
+    | Pair (e1, e2) -> Pair (unannot e1, unannot e2)
+    | Projection (p, e) -> Projection (p, unannot e)
+    | Debug (str, e) -> Debug (str, unannot e)
+    in
+    ( (), e )
 
-let rec substitute_var v ve e =
-    match e with
-    | Const (a, c) -> Const (a, c)
-    | Var (a, v') when v=v' -> ve
-    | Var (a, v') -> Var (a, v')
-    | Lambda (a, t, v', e) when v=v' -> Lambda (a, t, v', e)
-    | Lambda (a, t, v', e) -> Lambda (a, t, v', substitute_var v ve e)
-    | RecLambda (a, s, t, v', e) when v=v' || v=s -> RecLambda (a, s, t, v', e)
-    | RecLambda (a, s, t, v', e) -> RecLambda (a, s, t, v', substitute_var v ve e)
-    | Ite (a, e, t, e1, e2) -> Ite (a, substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
-    | App (a, e1, e2) -> App (a, substitute_var v ve e1, substitute_var v ve e2)
-    | Let (a, v', e1, e2) when v=v' -> Let (a, v', substitute_var v ve e1, e2)
-    | Let (a, v', e1, e2) -> Let (a, v', substitute_var v ve e1, substitute_var v ve e2)
-    | Pair (a, e1, e2) -> Pair (a, substitute_var v ve e1, substitute_var v ve e2)
-    | Projection (a, p, e) -> Projection (a, p, substitute_var v ve e)
-    | Debug (a, str, e) -> Debug (a, str, substitute_var v ve e)
+exception Found
+let rec substitute_var v ve (a,e) =
+    try
+    (
+        let e = match e with
+        | Const c -> Const c
+        | Var v' when v=v' -> raise Found
+        | Var v' -> Var v'
+        | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
+        | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
+        | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
+        | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
+        | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
+        | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
+        | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
+        | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
+        | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
+        | Projection (p, e) -> Projection (p, substitute_var v ve e)
+        | Debug (str, e) -> Debug (str, substitute_var v ve e)
+        in
+        (a,e)
+    )
+    with Found -> ve
 
 let const_to_typ c =
     match c with

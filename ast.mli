@@ -37,17 +37,19 @@ type expr = (typ, varid, expr) t
 type parser_expr = annotation * (type_expr, varname, parser_expr) t
 *)
 
-type ('a, 'typ, 'v) t =
-| Const of 'a * 'typ const
-| Var of 'a * 'v
-| Lambda of 'a * 'typ * 'v * ('a, 'typ, 'v) t
-| RecLambda of 'a * 'v * 'typ * 'v * ('a, 'typ, 'v) t
-| Ite of 'a * ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| App of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Let of 'a * 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Pair of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
-| Projection of 'a * projection * ('a, 'typ, 'v) t
-| Debug of 'a * string * ('a, 'typ, 'v) t
+type ('a, 'typ, 'v) ast =
+| Const of 'typ const
+| Var of 'v
+| Lambda of 'typ * 'v * ('a, 'typ, 'v) t
+| RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
+| Ite of ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| App of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Pair of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Projection of projection * ('a, 'typ, 'v) t
+| Debug of string * ('a, 'typ, 'v) t
+
+and ('a, 'typ, 'v) t = 'a * ('a, 'typ, 'v) ast
 
 type annot_expr = (annotation, typ, varid) t
 type expr = (unit, typ, varid) t
@@ -74,7 +76,7 @@ val parser_const_to_const : type_env -> type_expr const -> typ const
 
 val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 
-val annot_expr_to_expr : annot_expr -> expr
+val unannot : annot_expr -> expr
 
 val substitute_var : 'a -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t
 
