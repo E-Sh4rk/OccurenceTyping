@@ -12,25 +12,46 @@ type 't const =
 
 type projection = Fst | Snd
 
-(* TODO: Add an annoted AST with unique ID and line number for each expression. *)
-
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
+type exprid = int
 
-type ('t, 'v) expr' =
-| Const of 't const
+type annotation = int * Lexing.position
+
+(* Could be a better definition but 'cyclic type' ... (actually not) *)
+(*
+type ('typ, 'v, 't) t =
+| Const of 'typ const
 | Var of 'v
-| Lambda of 't * 'v * ('t, 'v) expr'
-| RecLambda of 'v * 't * 'v * ('t, 'v) expr'
-| Ite of ('t, 'v) expr' * 't * ('t, 'v) expr' * ('t, 'v) expr'
-| App of ('t, 'v) expr' * ('t, 'v) expr'
-| Let of 'v * ('t, 'v) expr' * ('t, 'v) expr'
-| Pair of ('t, 'v) expr' * ('t, 'v) expr'
-| Projection of projection * ('t, 'v) expr'
-| Debug of string * ('t, 'v) expr'
+| Lambda of 'typ * 'v * 't
+| RecLambda of 'v * 'typ * 'v * 't
+| Ite of 't * 'typ * 't * 't
+| App of 't * 't
+| Let of 'v * 't * 't
+| Pair of 't * 't
+| Projection of projection * 't
+| Debug of string * 't
 
-type parser_expr = (type_expr, varname) expr'
-type expr = (typ, varid) expr'
+type annoted_expr = annotation * (typ, varid, annoted_expr) t
+type expr = (typ, varid, expr) t
+type parser_expr = annotation * (type_expr, varname, parser_expr) t
+*)
+
+type ('a, 'typ, 'v) t =
+| Const of 'a * 'typ const
+| Var of 'a * 'v
+| Lambda of 'a * 'typ * 'v * ('a, 'typ, 'v) t
+| RecLambda of 'a * 'v * 'typ * 'v * ('a, 'typ, 'v) t
+| Ite of 'a * ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| App of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Let of 'a * 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Pair of 'a * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
+| Projection of 'a * projection * ('a, 'typ, 'v) t
+| Debug of 'a * string * ('a, 'typ, 'v) t
+
+type annot_expr = (annotation, typ, varid) t
+type expr = (unit, typ, varid) t
+type parser_expr = (annotation, type_expr, varname) t
 
 module Expr : sig
     type t = expr
@@ -43,13 +64,19 @@ type id_map = int StrMap.t
 
 val empty_id_map : id_map
 
+val unique_exprid : unit -> exprid
+
 val unique_varid : unit -> varid
+
+val new_dummy_annot : unit -> annotation
 
 val parser_const_to_const : type_env -> type_expr const -> typ const
 
-val parser_expr_to_expr : type_env -> id_map -> parser_expr -> expr
+val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 
-val substitute_var : 'a -> ('b, 'a) expr' -> ('b, 'a) expr' -> ('b, 'a) expr'
+val annot_expr_to_expr : annot_expr -> expr
+
+val substitute_var : 'a -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t
 
 val const_to_typ : typ const -> typ
 

@@ -14,9 +14,10 @@ let _ =
       Format.printf "%s: " name ;
       begin try
         let id = unique_varid () in
-        let typ = typeof env (parser_expr_to_expr tenv idm parsed_expr) in
+        let annot_expr = parser_expr_to_annot_expr tenv idm parsed_expr in
+        let typ = typeof env (annot_expr_to_expr annot_expr) in
         let idm = StrMap.add name id idm in
-        let env = ExprMap.add (Var id) typ env in
+        let env = ExprMap.add (Var ((), id)) typ env in
         Utils.print_type typ ; (idm, env)
       with Ill_typed str -> Format.printf "Ill typed: %s\n" str ; (idm,env)
       end 

@@ -13,13 +13,13 @@ exception Invalid_path
 let rec follow_path e p =
     match e, p with
     | e, [] -> e
-    | App (e,_), LApp::p
-    | App (_,e), RApp::p
-    | Pair (e,_), LPair::p
-    | Pair (_,e), RPair::p
-    | Projection (Fst, e), PFst::p
-    | Projection (Snd, e), PSnd::p
-    | Debug (_, e), (Dbg _)::p
+    | App (_,e,_), LApp::p
+    | App (_,_,e), RApp::p
+    | Pair (_,e,_), LPair::p
+    | Pair (_,_,e), RPair::p
+    | Projection (_,Fst, e), PFst::p
+    | Projection (_,Snd, e), PSnd::p
+    | Debug (_,_, e), (Dbg _)::p
     -> follow_path e p
     | _, LApp::_ | _, RApp::_
     | _, LPair::_ | _, RPair::_
@@ -55,40 +55,40 @@ module IntMap = Map.Make(struct type t = int let compare = compare end)
 let eliminate_all_lets e =
     let rec aux env e =
         match e with
-        | Const c -> Const c
-        | Var v when IntMap.mem v env -> IntMap.find v env
-        | Var v -> Var v
-        | Lambda (t, v, e) -> Lambda (t, v, aux (IntMap.remove v env) e)
-        | RecLambda (s, t, v, e) ->
+        | Const (a,c) -> Const (a,c)
+        | Var (_,v) when IntMap.mem v env -> IntMap.find v env
+        | Var (a,v) -> Var (a,v)
+        | Lambda (a, t, v, e) -> Lambda (a, t, v, aux (IntMap.remove v env) e)
+        | RecLambda (a, s, t, v, e) ->
             let env = IntMap.remove v (IntMap.remove s env) in
-            RecLambda (s, t, v, aux env e)
-        | Ite (e, t, e1, e2) -> Ite (aux env e, t, aux env e1, aux env e2)
-        | App (e1, e2) -> App (aux env e1, aux env e2)
-        | Let (v, e1, e2) ->
+            RecLambda (a, s, t, v, aux env e)
+        | Ite (a, e, t, e1, e2) -> Ite (a, aux env e, t, aux env e1, aux env e2)
+        | App (a, e1, e2) -> App (a, aux env e1, aux env e2)
+        | Let (a, v, e1, e2) ->
             let e1 = aux env e1 in
-            Let (v, e1, aux (IntMap.add v e1 env) e2)
-        | Pair (e1, e2) -> Pair (aux env e1, aux env e2)
-        | Projection (p, e) -> Projection (p, aux env e)
-        | Debug (str, e) -> Debug (str, aux env e)
+            Let (a, v, e1, aux (IntMap.add v e1 env) e2)
+        | Pair (a, e1, e2) -> Pair (a, aux env e1, aux env e2)
+        | Projection (a, p, e) -> Projection (a, p, aux env e)
+        | Debug (a, str, e) -> Debug (a, str, aux env e)
     in
     aux IntMap.empty e
 
 let rec all_paths_for_expr rev_prefix e =
     match e with
-    | App (e1, e2) ->
+    | App (_, e1, e2) ->
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
     | Let _ -> failwith "Let bindings in tests must be eliminated before back-typing!"
-    | Pair (e1, e2) ->
+    | Pair (_, e1, e2) ->
         let p1 = all_paths_for_expr (LPair::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RPair::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
-    | Projection (Fst, e) ->
+    | Projection (_, Fst, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr (PFst::rev_prefix) e)
-    | Projection (Snd, e) ->
+    | Projection (_, Snd, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr (PSnd::rev_prefix) e)
-    | Debug (str, e) ->
+    | Debug (_, str, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr ((Dbg str)::rev_prefix) e)
     | Const _ | Var _ | Lambda _ | RecLambda _ | Ite _ -> [List.rev rev_prefix]
 
@@ -128,12 +128,12 @@ and typeof_raw self (env, e) =
     let type_lambda (s,t,v,e) =
         let env = match s with
         | None -> env
-        | Some s -> ExprMap.add (Var s) t env
+        | Some s -> ExprMap.add (Var ((),s)) t env
         in
         let dnf = dnf t in
         let valid_type conj =
             let is_valid (s,t) =
-                let env = ExprMap.add (Var v) s env in
+                let env = ExprMap.add (Var ((),v)) s env in
                 subtype (self (env, e)) t
             in
             List.for_all is_valid conj
@@ -146,38 +146,38 @@ and typeof_raw self (env, e) =
     | Some t -> t
     | None ->
     begin match e with
-        | Const c -> const_to_typ c
-        | Lambda (t,v,e) -> type_lambda (None,t,v,e)
-        | RecLambda (s,t,v,e) -> type_lambda (Some s,t,v,e)
-        | App (e1, e2) ->
+        | Const (_,c) -> const_to_typ c
+        | Lambda (_,t,v,e) -> type_lambda (None,t,v,e)
+        | RecLambda (_,s,t,v,e) -> type_lambda (Some s,t,v,e)
+        | App (_,e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
             if subtype t2 (domain t1) then apply t1 t2
             else raise (Ill_typed "Bad domain for the application.")
-        | Ite (e,t,e1,e2) ->
+        | Ite (_,e,t,e1,e2) ->
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
             let env2 = refine_env env e (neg t) in
             let t1 = if is_bottom env1 then empty else self (env1, e1) in
             let t2 = if is_bottom env2 then empty else self (env2, e2) in
             cup t1 t2
-        | Let (v, e1, e2) ->
+        | Let (_, v, e1, e2) ->
             let env = ExprMap.add e1 (self (env, e1)) env in
             self (env, substitute_var v e1 e2)
         | Var _ -> failwith "Unknown variable type..."
-        | Pair (e1, e2) ->
+        | Pair (_, e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
             mk_times (cons t1) (cons t2)
-        | Projection (Fst, e) ->
+        | Projection (_, Fst, e) ->
             let t = self (env, e) in
             if subtype t pair_any then pi1 t
             else raise (Ill_typed "Fst can only be applied to a pair.")
-        | Projection (Snd, e) ->
+        | Projection (_, Snd, e) ->
             let t = self (env, e) in
             if subtype t pair_any then pi2 t
             else raise (Ill_typed "Snd can only be applied to a pair.")
-        | Debug (str, e) ->
+        | Debug (_, str, e) ->
             let res = self (env, e) in
             Format.printf "%s (typeof): " str ; Utils.print_type res ;
             res

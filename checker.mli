@@ -8,7 +8,7 @@ type path = dir list
 
 exception Invalid_path
 
-val follow_path : expr -> path -> expr
+val follow_path : ('c, 'b, 'a) t -> path -> ('c, 'b, 'a) t
 
 type env = typ ExprMap.t
 val empty_env : env

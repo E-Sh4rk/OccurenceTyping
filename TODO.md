@@ -1,7 +1,9 @@
 # TODO
 
+- Add parser errors (with line number)
+- Factorise annotations (do not put them in each constructor...)
+- Take annot_expr as argument in Checker instead of expr
 - Add warnings when a branch is NEVER reachable
 - Add extensions (records, lists...)
-- Improve errors (for each expression store corresponding line)
 - Polymorphism
 - Type inference
