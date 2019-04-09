@@ -12,6 +12,8 @@ type 't const =
 
 type projection = Fst | Snd
 
+(* TODO: Add an annoted AST with unique ID and line number for each expression. *)
+
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 

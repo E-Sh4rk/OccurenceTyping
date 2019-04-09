@@ -14,6 +14,12 @@ type env = typ ExprMap.t
 val empty_env : env
 val is_bottom : env -> bool
 
+(*type logs_data = { ignored:int ; visited:int }
+val get_logs : expr -> logs_data
+val set_logs : expr -> logs_data -> unit
+val all_logs : unit -> (expr * logs_data) Seq.t
+val clear_logs : unit -> unit*)
+
 exception Ill_typed of string
 
 val back_typeof : env -> expr -> typ -> path -> typ (* Equivalent to Env in the paper *)

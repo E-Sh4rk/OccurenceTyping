@@ -1,8 +1,8 @@
 # OccurenceTyping
 
-Can be compiled with:
+Prerequisite:
 
-- master branch of CDuce and OCaml 4.04.2 (it seems not to compile on >= 4.05).
-- cduce-next branch of CDuce and OCaml 4.07.0
+- OCaml 4.07.0
+- CDuce (cduce-next branch)
 
 See `INSTALL.md` for more details.

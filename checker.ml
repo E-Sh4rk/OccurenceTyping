@@ -33,6 +33,21 @@ let is_bottom env =
     List.exists is_bottom (ExprMap.bindings env)
 
 
+(*type logs_data = { ignored:int ; visited:int }
+let logs = Hashtbl.create 25
+let default_logs_data = { ignored = 0 ; visited = 0 }
+let clear_logs () =
+    (* Reset restore the initial bucket table size,
+    so we can iterate more efficiently on the table *)
+    Hashtbl.reset logs
+let all_logs () = Hashtbl.to_seq logs
+let get_logs expr =
+    match Hashtbl.find_opt logs expr with
+    | None -> default_logs_data
+    | Some ld -> ld
+let set_logs expr ld =
+    Hashtbl.replace logs expr ld*)
+
 exception Ill_typed of string
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
