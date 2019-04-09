@@ -3,9 +3,9 @@
    open Ast
    open Types_additions
 
-   (*let parsing_error pos msg =
+   let parsing_error pos msg =
      Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;
-     exit 1*)
+     exit 1
 
    let var_or_primitive = function
      (*| Id "cos" -> Primitive Cos
@@ -59,13 +59,19 @@
 %%
 
 program: e=element* EOF { e }
+| error {
+  parsing_error (Position.lex_join $startpos $endpos) "Syntax error."
+}
 
 definitions: a=definition* EOF { a }
-(*| error {
+| error {
   parsing_error (Position.lex_join $startpos $endpos) "Syntax error."
-}*)
+}
 
 unique_term: t=term EOF { t }
+| error {
+  parsing_error (Position.lex_join $startpos $endpos) "Syntax error."
+}
 
 
 element:
