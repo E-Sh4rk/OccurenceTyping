@@ -35,7 +35,7 @@ let type_expr_to_typ env t =
         match t with
         | TBase tb -> cons (type_base_to_typ tb)
         | TCustom k ->
-            (try StrMap.find k env with _ -> failwith (Printf.sprintf "Type %s undefined!" k))
+            (try StrMap.find k env with Not_found -> failwith (Printf.sprintf "Type %s undefined!" k))
         | TPair (t1,t2) -> cons (mk_times (aux t1) (aux t2))
         | TArrow (t1,t2) -> cons (mk_arrow (aux t1) (aux t2))
         | TCup (t1,t2) ->
@@ -76,7 +76,7 @@ let define_types env defs =
 let get_atom env atom =
     let atom = String.capitalize_ascii atom in
     try descr (StrMap.find atom env)
-    with _ -> failwith (Printf.sprintf "Atom %s undefined!" atom)
+    with Not_found -> failwith (Printf.sprintf "Atom %s undefined!" atom)
 
 (* Operations on types *)
 
