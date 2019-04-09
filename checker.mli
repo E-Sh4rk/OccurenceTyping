@@ -22,6 +22,6 @@ val clear_logs : unit -> unit*)
 
 exception Ill_typed of string
 
-val back_typeof : env -> expr -> typ -> path -> typ (* Equivalent to Env in the paper *)
-val typeof : env -> expr -> typ
-val refine_env : env -> expr -> typ -> env
+val back_typeof : env -> annot_expr -> typ -> path -> typ (* Equivalent to Env in the paper *)
+val typeof : env -> annot_expr -> typ
+val refine_env : env -> annot_expr -> typ -> env

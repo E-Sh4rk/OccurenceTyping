@@ -149,7 +149,7 @@ and typeof_raw self (env, e) =
         else raise (Ill_typed "Wrong type for the lambda-abstraction.")
     in
 
-    match ExprMap.find_opt e env with
+    match ExprMap.find_opt (unannot e) env with
     | Some t -> t
     | None ->
         begin match snd e with
@@ -169,7 +169,7 @@ and typeof_raw self (env, e) =
             let t2 = if is_bottom env2 then empty else self (env2, e2) in
             cup t1 t2
         | Let (v, e1, e2) ->
-            let env = ExprMap.add e1 (self (env, e1)) env in
+            let env = ExprMap.add (unannot e1) (self (env, e1)) env in
             self (env, substitute_var v e1 e2)
         | Var _ -> failwith "Unknown variable type..."
         | Pair (e1, e2) ->
@@ -207,7 +207,7 @@ and refine_env env e t =
     let paths_t = List.fold_left2 (fun acc p t -> PathMap.add p t acc) PathMap.empty paths paths_t in 
     (* Build a map from sub-expressions (occurrences) to paths *)
     let add_path acc p =
-        let e = follow_path e p in
+        let e = unannot (follow_path e p) in
         let v = match ExprMap.find_opt e acc with
         | None -> [p]
         | Some ps -> p::ps
@@ -215,9 +215,9 @@ and refine_env env e t =
     in
     let map = List.fold_left add_path ExprMap.empty paths in
     (* Refine the type for each expression *)
-    let refine_for_expr acc (e', paths) =
+    let refine_for_expr acc (e, paths) =
         let types = List.map (fun p -> PathMap.find p paths_t) paths in
-        ExprMap.add e' (conj types) acc
+        ExprMap.add e (conj types) acc
     in
     List.fold_left refine_for_expr env (ExprMap.bindings map)
 

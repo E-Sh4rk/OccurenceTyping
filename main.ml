@@ -15,7 +15,7 @@ let _ =
       begin try
         let id = unique_varid () in
         let annot_expr = parser_expr_to_annot_expr tenv idm parsed_expr in
-        let typ = typeof env (unannot annot_expr) in
+        let typ = typeof env annot_expr in
         let idm = StrMap.add name id idm in
         let env = ExprMap.add ((), Var id) typ env in
         Utils.print_type typ ; (idm, env)
