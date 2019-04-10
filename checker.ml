@@ -41,12 +41,12 @@ let clear_logs () =
     so we can iterate more efficiently on the table *)
     Hashtbl.reset logs
 let all_logs () = Hashtbl.to_seq logs
-let get_logs expr =
-    match Hashtbl.find_opt logs expr with
+let get_logs id =
+    match Hashtbl.find_opt logs id with
     | None -> default_logs_data
     | Some ld -> ld
-let set_logs expr ld =
-    Hashtbl.replace logs expr ld*)
+let set_logs id ld =
+    Hashtbl.replace logs id ld*)
 
 exception Ill_typed of string
 
@@ -101,7 +101,7 @@ let rec all_paths_for_expr rev_prefix (_,e) =
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
-let rec back_typeof_rev self (memo_t, env, e, t, p) =
+let rec back_typeof_rev_open self (memo_t, env, e, t, p) =
     let typeof = typeof_memo memo_t in
     let typeof p = typeof env (follow_path e (List.rev p)) in
     let self = fun p -> self (memo_t, env, e, t, p) in
@@ -118,17 +118,17 @@ let rec back_typeof_rev self (memo_t, env, e, t, p) =
     cap t (typeof p)
 
 and back_typeof_no_memo _ =
-    let back_typeof_rev = Utils.do_not_memoize back_typeof_rev in
+    let back_typeof_rev = Utils.do_not_memoize back_typeof_rev_open in
     fun env e t p -> back_typeof_rev (Hashtbl.create 1, env, e, t, List.rev p)
 
 and optimized_back_typeof env e t ps =
     let n = List.length ps in
     let path_select (_,_,_,_,p) = p in
-    let back_typeof_rev = Utils.memoize back_typeof_rev path_select (Hashtbl.create n) in
+    let back_typeof_rev = Utils.memoize back_typeof_rev_open path_select (Hashtbl.create n) in
     let memo_to = Hashtbl.create n in
     List.map (fun p -> back_typeof_rev (memo_to, env, e, t, List.rev p)) ps
 
-and typeof_raw self (env, e) =
+and typeof_open self (env, e) =
     (* The rule that states that 'every expression has type bottom in the bottom environment'
        is integrated in the Ite case for efficiency reasons. *)
 
@@ -191,11 +191,12 @@ and typeof_raw self (env, e) =
         end
 
 and typeof_no_memo _ =
-    let typeof = Utils.do_not_memoize typeof_raw in
+    let typeof = Utils.do_not_memoize typeof_open in
     fun env e -> typeof (env, e)
 
 and typeof_memo ht =
-    let typeof = Utils.memoize typeof_raw snd ht in
+    let path_select (_,e) = identifier_of_expr e in
+    let typeof = Utils.memoize typeof_open path_select ht in
     fun env e -> typeof (env, e)
 
 and refine_env env e t =

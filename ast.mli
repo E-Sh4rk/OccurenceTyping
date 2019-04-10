@@ -16,7 +16,7 @@ type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 type exprid = int
 
-type annotation = int * Lexing.position
+type annotation = exprid * Lexing.position
 
 (* Could be a better definition but 'cyclic type' ... (actually not) *)
 (*
@@ -69,6 +69,8 @@ val empty_id_map : id_map
 val unique_exprid : unit -> exprid
 
 val unique_varid : unit -> varid
+
+val identifier_of_expr : (annotation, 'a, 'b) t -> exprid
 
 val new_dummy_annot : unit -> annotation
 

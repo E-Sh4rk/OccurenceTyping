@@ -15,9 +15,9 @@ val empty_env : env
 val is_bottom : env -> bool
 
 (*type logs_data = { ignored:int ; visited:int }
-val get_logs : expr -> logs_data
-val set_logs : expr -> logs_data -> unit
-val all_logs : unit -> (expr * logs_data) Seq.t
+val get_logs : exprid -> logs_data
+val set_logs : exprid -> logs_data -> unit
+val all_logs : unit -> (exprid * logs_data) Seq.t
 val clear_logs : unit -> unit*)
 
 exception Ill_typed of string

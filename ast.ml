@@ -61,6 +61,8 @@ let unique_varid =
         !last_id
     )
 
+let identifier_of_expr ((id,_),_) = id
+
 let new_dummy_annot () =
     (unique_exprid (), Lexing.dummy_pos)
 
