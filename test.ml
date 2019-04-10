@@ -133,7 +133,6 @@ let appl2 =
    let bti =
          fun (Bool -> Int) b -> magic
    in
-
-   fun ( (( Int | Char -> Int) & (Bool | Char -> Bool)) -> Char -> Int) x1 ->
+   fun ( ( (Int|Char -> Int) | (Bool|Char -> Bool) ) -> Char -> Int) x1 ->
         fun (Char -> Int) x2 ->
                 if (x1 x2) is Int then incr (x1(x1 x2)) else bti (x1(x1 x2))

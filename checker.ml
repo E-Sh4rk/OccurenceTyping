@@ -38,7 +38,7 @@ let add_atoms_to_env env atoms tenv =
     in
     List.fold_left add_atom env atoms
 
-(*type logs_data = { ignored:int ; visited:int }
+type logs_data = { ignored:int ; visited:int }
 let logs = Hashtbl.create 25
 let default_logs_data = { ignored = 0 ; visited = 0 }
 let clear_logs () =
@@ -51,7 +51,7 @@ let get_logs id =
     | None -> default_logs_data
     | Some ld -> ld
 let set_logs id ld =
-    Hashtbl.replace logs id ld*)
+    Hashtbl.replace logs id ld
 
 exception Ill_typed of string
 
@@ -170,8 +170,17 @@ and typeof_open self (env, e) =
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
             let env2 = refine_env env e (neg t) in
-            let t1 = if is_bottom env1 then empty else self (env1, e1) in
-            let t2 = if is_bottom env2 then empty else self (env2, e2) in
+            (* We do some marking in order to detect unreachable code *)
+            let id1 = identifier_of_expr e1 in
+            let id2 = identifier_of_expr e2 in
+            let logs1 = get_logs id1 in
+            let logs2 = get_logs id2 in
+            let t1 = if is_bottom env1
+            then (set_logs id1 {logs1 with ignored=logs1.ignored+1} ; empty)
+            else (set_logs id1 {logs1 with visited=logs1.visited+1} ; self (env1, e1)) in
+            let t2 = if is_bottom env2
+            then (set_logs id2 {logs2 with ignored=logs2.ignored+1} ; empty)
+            else (set_logs id2 {logs2 with visited=logs2.visited+1} ; self (env2, e2)) in
             cup t1 t2
         | Let (v, e1, e2) ->
             let env = ExprMap.add (unannot e1) (self (env, e1)) env in

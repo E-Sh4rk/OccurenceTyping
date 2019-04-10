@@ -5,6 +5,14 @@ open Types_additions
 open Checker
 open IO
 
+let print_logs () =
+  let treat (exprid, data)  =
+    if data.visited = 0 && data.ignored > 0
+    then Printf.printf "Warning: expression n°%i is unreachable!\n" exprid
+  in
+  Seq.iter treat (all_logs ()) ;
+  clear_logs ()
+
 let _ =
     let fn = ref "test.ml" in
     if Array.length Sys.argv > 1 then fn := Sys.argv.(1) ;
@@ -18,7 +26,7 @@ let _ =
         let typ = typeof env annot_expr in
         let idm = StrMap.add name id idm in
         let env = ExprMap.add ((), Var id) typ env in
-        Utils.print_type typ ; (idm, env)
+        Utils.print_type typ ; print_logs () ; (idm, env)
       with Ill_typed str -> Format.printf "Ill typed: %s\n" str ; (idm,env)
       end 
     in
