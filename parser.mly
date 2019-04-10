@@ -28,14 +28,14 @@
 %}
 
 %token EOF
-%token FUN REC LET IN FST SND DEBUG
+%token FUN LET IN FST SND DEBUG
 %token IF IS THEN ELSE
-%token LPAREN RPAREN COLON EQUAL COMMA
+%token LPAREN RPAREN EQUAL COMMA COLON
 %token ARROW AND OR NEG DIFF
 %token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE UNIT
-%token TIMES (*PLUS MINUS*)
+%token DOUBLEDASH TIMES (*PLUS MINUS*)
 %token ATOMS TYPE TYPE_AND
-%token LBRACKET RBRACKET SEMICOLON
+(*%token LBRACKET RBRACKET SEMICOLON*)
 %token<string> ID
 %token<string> TID
 (*%token<float> LFLOAT*)
@@ -55,7 +55,7 @@
 %left OR
 %left AND
 (*%left PLUS*)
-%left TIMES
+(*%left TIMES*)
 %nonassoc DIFF
 %nonassoc NEG
 
@@ -117,12 +117,12 @@ literal:
 | MAGIC    { Magic }
 
 %inline abstraction:
-  FUN vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
+  FUN LPAREN ty=typ RPAREN vs=identifier+ ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
   else annot (Lambda (ty, List.hd vs, t))
 }
-| REC self=identifier vs=identifier+ COLON LPAREN ty=typ RPAREN ARROW t=term
+| FUN LPAREN self=identifier COLON ty=typ RPAREN vs=identifier+ ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
   else annot (RecLambda (self, ty, List.hd vs, t))
@@ -143,7 +143,7 @@ typ:
   x=type_constant { TBase x }
 | s=TID { TCustom s }
 | lhs=typ ARROW rhs=typ { TArrow (lhs, rhs) }
-| lhs=typ TIMES rhs=typ { TPair (lhs, rhs) }
+| LPAREN lhs=typ COMMA rhs=typ RPAREN { TPair (lhs, rhs) }
 | NEG t=typ { TNeg t }
 | lhs=typ AND rhs=typ { TCap (lhs, rhs) }
 | lhs=typ OR rhs=typ  { TCup (lhs, rhs) }
@@ -153,6 +153,7 @@ typ:
 type_constant:
 (*  FLOAT { TyFloat }*)
   INT { TInt (None, None) }
+| i=LINT { TInt (Some i, Some i) }
 | i=type_interval { i }
 | CHAR { TChar }
 | BOOL { TBool }
@@ -163,10 +164,14 @@ type_constant:
 | ANY { TAny }
 
 type_interval:
-  LBRACKET lb=LINT SEMICOLON ub=LINT RBRACKET { TInt (Some lb, Some ub) }
+(*  LBRACKET lb=LINT SEMICOLON ub=LINT RBRACKET { TInt (Some lb, Some ub) }
 | LBRACKET SEMICOLON ub=LINT RBRACKET { TInt (None, Some ub) }
 | LBRACKET lb=LINT SEMICOLON RBRACKET { TInt (Some lb, None) }
-| LBRACKET SEMICOLON RBRACKET { TInt (None, None) }
+| LBRACKET SEMICOLON RBRACKET { TInt (None, None) }*)
+  lb=LINT DOUBLEDASH ub=LINT { TInt (Some lb, Some ub) }
+| TIMES DOUBLEDASH ub=LINT { TInt (None, Some ub) }
+| lb=LINT DOUBLEDASH TIMES { TInt (Some lb, None) }
+| TIMES DOUBLEDASH TIMES { TInt (None, None) }
 
 (*%inline located(X): x=X {
   Position.with_poss $startpos $endpos x
