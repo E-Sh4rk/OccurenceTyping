@@ -128,6 +128,10 @@ let appl1_ok =
      fun ( (Int | Bool) -> (Int | Bool) ) x2 ->
          if (x1 x2) is Int then plus x2 (x1 x2) else land x2 (x1 x2)
 
+(* This function does not type in our current typing system.
+   We could make it type by strengthening the back_typeof rule for LApp
+   (we should capture the fact that the application of the function has not diverged). *)
+
 let appl2 =
 
    let bti =
@@ -135,4 +139,4 @@ let appl2 =
    in
    fun ( ( (Int|Char -> Int) | (Bool|Char -> Bool) ) -> Char -> Int) x1 ->
         fun (Char -> Int) x2 ->
-                if (x1 x2) is Int then incr (x1(x1 x2)) else bti (x1(x1 x2))
+                if (x1 x2) is Int then incr (x1 (x1 x2)) else bti (x1 (x1 x2))

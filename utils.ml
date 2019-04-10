@@ -4,6 +4,7 @@ let dump_type t =
 
 let print_type t =
     Format.printf "%s\n" (Cduce.string_of_type t)
+    (*Format.printf "%s\n" (Cduce.string_of_type (Cduce.domain t))*)
 
 let memoize f input_transform ht =
   let rec aux input =
