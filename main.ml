@@ -29,6 +29,7 @@ let _ =
         (tenv,idm,env)
       | Atoms lst ->
         let tenv = List.fold_left define_atom tenv lst in
+        let env = add_atoms_to_env env lst tenv in
         (tenv,idm,env)
       | Types lst ->
         let tenv = define_types tenv lst in

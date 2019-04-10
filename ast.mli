@@ -2,13 +2,13 @@
 open Types_additions
 type typ = Cduce.typ
 
-type 't const =
+type const =
 | Magic
 | Unit
 | Bool of bool
 | Int of int
 | Char of char
-| Atom of 't
+| Atom of string
 
 type projection = Fst | Snd
 
@@ -21,7 +21,7 @@ type annotation = exprid * Lexing.position
 (* Could be a better definition but 'cyclic type' ... (actually not) *)
 (*
 type ('typ, 'v, 't) t =
-| Const of 'typ const
+| Const of const
 | Var of 'v
 | Lambda of 'typ * 'v * 't
 | RecLambda of 'v * 'typ * 'v * 't
@@ -38,7 +38,7 @@ type parser_expr = annotation * (type_expr, varname, parser_expr) t
 *)
 
 type ('a, 'typ, 'v) ast =
-| Const of 'typ const
+| Const of const
 | Var of 'v
 | Lambda of 'typ * 'v * ('a, 'typ, 'v) t
 | RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
@@ -74,15 +74,13 @@ val identifier_of_expr : (annotation, 'a, 'b) t -> exprid
 
 val new_dummy_annot : unit -> annotation
 
-val parser_const_to_const : type_env -> type_expr const -> typ const
-
 val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 
 val unannot : annot_expr -> expr
 
 val substitute_var : 'a -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t
 
-val const_to_typ : typ const -> typ
+val const_to_typ : const -> typ
 
 type parser_element =
 | Definition of (string * parser_expr)

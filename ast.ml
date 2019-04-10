@@ -2,13 +2,13 @@
 open Types_additions
 type typ = Cduce.typ
 
-type 't const =
+type const =
 | Magic
 | Unit
 | Bool of bool
 | Int of int
 | Char of char
-| Atom of 't
+| Atom of string
 
 type projection = Fst | Snd
 
@@ -19,7 +19,7 @@ type exprid = int
 type annotation = int * Lexing.position
 
 type ('a, 'typ, 'v) ast =
-| Const of 'typ const
+| Const of const
 | Var of 'v
 | Lambda of 'typ * 'v * ('a, 'typ, 'v) t
 | RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
@@ -66,23 +66,14 @@ let identifier_of_expr ((id,_),_) = id
 let new_dummy_annot () =
     (unique_exprid (), Lexing.dummy_pos)
 
-let parser_const_to_const tenv c =
-    match c with
-    | Atom t -> Atom (type_expr_to_typ tenv t)
-    | Magic -> Magic
-    | Unit -> Unit
-    | Bool b -> Bool b
-    | Int i -> Int i
-    | Char c -> Char c
-
 let parser_expr_to_annot_expr tenv id_map e =
     let rec aux env (a,e) =
         let e = match e with
-        | Const c -> Const (parser_const_to_const tenv c)
+        | Const c -> Const c
         | Var str ->
             if StrMap.mem str env
             then Var (StrMap.find str env)
-            else Const (Atom (get_atom tenv str))
+            else Const (Atom str)
         | Lambda (t,str,e) ->
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
@@ -149,6 +140,7 @@ let rec substitute_var v ve (a,e) =
     )
     with Found -> ve
 
+
 let const_to_typ c =
     match c with
     | Magic -> Cduce.empty
@@ -157,7 +149,8 @@ let const_to_typ c =
     | Int i -> Cduce.interval (Some i) (Some i)
     | Char c -> Cduce.single_char c
     | Unit -> Cduce.unit_typ
-    | Atom t -> t
+    | Atom t ->
+        failwith (Printf.sprintf "Can't retrieve the type of the atom %s." t)
 
 type parser_element =
 | Definition of (string * parser_expr)

@@ -32,6 +32,11 @@ let is_bottom env =
     let is_bottom (_,v) = is_empty v in
     List.exists is_bottom (ExprMap.bindings env)
 
+let add_atoms_to_env env atoms tenv =
+    let add_atom acc atom =
+        ExprMap.add ((), Const (Atom atom)) (get_atom tenv atom) acc
+    in
+    List.fold_left add_atom env atoms
 
 (*type logs_data = { ignored:int ; visited:int }
 let logs = Hashtbl.create 25
