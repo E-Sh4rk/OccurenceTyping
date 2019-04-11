@@ -61,7 +61,7 @@ let normalize_typ = CD.Types.normalize
 
 let mk_times = CD.Types.times
 
-let pair_any = mk_times any_node any_node
+let pair_any = CD.Types.Product.any
 
 let pi1 t =
     CD.Types.Product.pi1 (CD.Types.Product.get t)
@@ -86,9 +86,13 @@ let all_fields record =
 (* Maybe not optimised (if no memoisation for Arrow.get). We'll see that later. *)
 let mk_arrow = CD.Types.arrow
 
+let arrow_any = CD.Types.Arrow.any
+
 let domain t =
-    let t = CD.Types.Arrow.get t in
-    CD.Types.Arrow.domain t
+    if subtype t arrow_any then
+      let t = CD.Types.Arrow.get t in
+      CD.Types.Arrow.domain t
+    else empty
 
 let apply t args =
     let t = CD.Types.Arrow.get t in

@@ -138,20 +138,22 @@ and typeof_open self (env, e) =
        is integrated in the Ite case for efficiency reasons. *)
 
     let type_lambda (s,t,v,e) =
-        let env = match s with
-        | None -> env
-        | Some s -> ExprMap.add ((), Var s) t env
-        in
-        let dnf = dnf t in
-        let valid_type conj =
-            let is_valid (s,t) =
-                let env = ExprMap.add ((), Var v) s env in
-                subtype (self (env, e)) t
+        if subtype t arrow_any then
+            let env = match s with
+            | None -> env
+            | Some s -> ExprMap.add ((), Var s) t env
             in
-            List.for_all is_valid conj
-        in
-        if List.exists valid_type dnf then t
-        else raise (Ill_typed "Wrong type for the lambda-abstraction.")
+            let dnf = dnf t in
+            let valid_type conj =
+                let is_valid (s,t) =
+                    let env = ExprMap.add ((), Var v) s env in
+                    subtype (self (env, e)) t
+                in
+                List.for_all is_valid conj
+            in
+            if List.exists valid_type dnf then t
+            else raise (Ill_typed "Wrong type for the lambda-abstraction.")
+        else raise (Ill_typed "A lambda-abstraction must have an arrow type!")
     in
 
     match ExprMap.find_opt (unannot e) env with
