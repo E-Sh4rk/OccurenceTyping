@@ -83,6 +83,14 @@ let all_fields record =
     List.map from_label (LabelSet.get lbls)
 
 
+
+let is_empty = CD.Types.is_empty
+let non_empty = CD.Types.non_empty
+let subtype = CD.Types.subtype
+let disjoint = CD.Types.disjoint
+let equiv = CD.Types.equiv
+
+
 (* Maybe not optimised (if no memoisation for Arrow.get). We'll see that later. *)
 let mk_arrow = CD.Types.arrow
 
@@ -100,13 +108,6 @@ let apply t args =
 
 let dnf t =
     snd (CD.Types.Arrow.get t)
-
-
-let is_empty = CD.Types.is_empty
-let non_empty = CD.Types.non_empty
-let subtype = CD.Types.subtype
-let disjoint = CD.Types.disjoint
-let equiv = CD.Types.equiv
 
 
 let true_typ = mk_atom "true"
