@@ -8,7 +8,7 @@ open IO
 let print_logs () =
   let treat (exprid, data)  =
     if data.visited = 0 && data.ignored > 0
-    then Printf.printf "Warning: %s\tExpression is unreachable!\n" (Position.string_of_pos data.position)
+    then Utils.warning data.position "Expression is unreachable!"
   in
   Seq.iter treat (all_logs ()) ;
   clear_logs ()
@@ -27,7 +27,7 @@ let _ =
         let idm = StrMap.add name id idm in
         let env = ExprMap.add ((), Var id) typ env in
         Utils.print_type typ ; print_logs () ; (idm, env)
-      with Ill_typed str -> Format.printf "Ill typed: %s\n" str ; (idm,env)
+      with Ill_typed (pos, str) -> Format.printf "Ill typed\n" ; Utils.error pos str ; (idm,env)
       end 
     in
     let treat_elem (tenv,idm,env) elem =

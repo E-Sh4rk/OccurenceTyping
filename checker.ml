@@ -54,7 +54,7 @@ let get_logs_expr e =
 let set_logs e ld =
     Hashtbl.replace logs (identifier_of_expr e) ld
 
-exception Ill_typed of string
+exception Ill_typed of Position.t * string
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
 
@@ -92,7 +92,7 @@ let rec all_paths_for_expr rev_prefix (_,e) =
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
-    | Let _ -> failwith "Let bindings in tests must be eliminated before back-typing!"
+    | Let _ -> assert false (* Let bindings in tests must be eliminated before back-typing! *)
     | Pair (e1, e2) ->
         let p1 = all_paths_for_expr (LPair::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RPair::rev_prefix) e2 in
@@ -143,6 +143,8 @@ and typeof_open self (env, e) =
     (* The rule that states that 'every expression has type bottom in the bottom environment'
        is integrated in the Ite case for efficiency reasons. *)
 
+    let pos = position_of_expr e in
+
     let type_lambda (s,t,v,e) =
         if subtype t arrow_any then
             let env = match s with
@@ -158,8 +160,8 @@ and typeof_open self (env, e) =
                 List.for_all is_valid conj
             in
             if List.exists valid_type dnf then t
-            else raise (Ill_typed "Wrong type for the lambda-abstraction.")
-        else raise (Ill_typed "A lambda-abstraction must have an arrow type!")
+            else raise (Ill_typed (pos, "Wrong type for the lambda-abstraction."))
+        else raise (Ill_typed (pos, "A lambda-abstraction must have an arrow type!"))
     in
 
     match ExprMap.find_opt (unannot e) env with
@@ -173,7 +175,7 @@ and typeof_open self (env, e) =
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
             if subtype t2 (domain t1) then apply t1 t2
-            else raise (Ill_typed "Bad domain for the application.")
+            else raise (Ill_typed (pos, "Bad domain for the application."))
         | Ite (e,t,e1,e2) ->
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
@@ -191,7 +193,7 @@ and typeof_open self (env, e) =
         | Let (v, e1, e2) ->
             let env = ExprMap.add (unannot e1) (self (env, e1)) env in
             self (env, substitute_var v e1 e2)
-        | Var _ -> failwith "Unknown variable type..."
+        | Var _ -> assert false
         | Pair (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
@@ -199,11 +201,11 @@ and typeof_open self (env, e) =
         | Projection (Fst, e) ->
             let t = self (env, e) in
             if subtype t pair_any then pi1 t
-            else raise (Ill_typed "Fst can only be applied to a pair.")
+            else raise (Ill_typed (pos, "Fst can only be applied to a pair."))
         | Projection (Snd, e) ->
             let t = self (env, e) in
             if subtype t pair_any then pi2 t
-            else raise (Ill_typed "Snd can only be applied to a pair.")
+            else raise (Ill_typed (pos, "Snd can only be applied to a pair."))
         | Debug (str, e) ->
             let res = self (env, e) in
             Format.printf "%s (typeof): " str ; Utils.print_type res ;

@@ -6,6 +6,12 @@ let print_type t =
     Format.printf "%s\n" (Cduce.string_of_type t)
     (*Format.printf "%s\n" (Cduce.string_of_type (Cduce.domain t))*)
 
+let warning pos msg =
+  Format.printf "Warning: %s\t%s\n" (Position.string_of_pos pos) msg
+
+let error pos msg =
+  Format.printf "Error: %s\t%s\n" (Position.string_of_pos pos) msg
+
 let memoize f input_transform ht =
   let rec aux input =
     let htbl_key = input_transform input in

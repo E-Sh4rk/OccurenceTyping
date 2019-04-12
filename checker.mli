@@ -21,7 +21,7 @@ val get_logs : exprid -> logs_data option
 val all_logs : unit -> (exprid * logs_data) Seq.t
 val clear_logs : unit -> unit
 
-exception Ill_typed of string
+exception Ill_typed of Position.t * string
 
 val back_typeof : env -> annot_expr -> typ -> path -> typ (* Equivalent to Env in the paper *)
 val typeof : env -> annot_expr -> typ
