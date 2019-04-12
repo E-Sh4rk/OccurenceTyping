@@ -16,9 +16,8 @@ val is_bottom : env -> bool
 
 val add_atoms_to_env : env -> string list -> Types_additions.type_env -> env
 
-type logs_data = { ignored:int ; visited:int }
-val get_logs : exprid -> logs_data
-val set_logs : exprid -> logs_data -> unit
+type logs_data = { ignored:int ; visited:int ; position:Position.t }
+val get_logs : exprid -> logs_data option
 val all_logs : unit -> (exprid * logs_data) Seq.t
 val clear_logs : unit -> unit
 

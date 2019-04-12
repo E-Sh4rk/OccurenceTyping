@@ -38,20 +38,21 @@ let add_atoms_to_env env atoms tenv =
     in
     List.fold_left add_atom env atoms
 
-type logs_data = { ignored:int ; visited:int }
+type logs_data = { ignored:int ; visited:int ; position:Position.t }
 let logs = Hashtbl.create 25
-let default_logs_data = { ignored = 0 ; visited = 0 }
+let default_logs_data pos = { ignored = 0 ; visited = 0 ; position = pos }
 let clear_logs () =
     (* Reset restore the initial bucket table size,
     so we can iterate more efficiently on the table *)
     Hashtbl.reset logs
 let all_logs () = Hashtbl.to_seq logs
-let get_logs id =
-    match Hashtbl.find_opt logs id with
-    | None -> default_logs_data
+let get_logs id = Hashtbl.find_opt logs id
+let get_logs_expr e =
+    match Hashtbl.find_opt logs (identifier_of_expr e) with
+    | None -> default_logs_data (position_of_expr e)
     | Some ld -> ld
-let set_logs id ld =
-    Hashtbl.replace logs id ld
+let set_logs e ld =
+    Hashtbl.replace logs (identifier_of_expr e) ld
 
 exception Ill_typed of string
 
@@ -178,16 +179,14 @@ and typeof_open self (env, e) =
             let env1 = refine_env env e t in
             let env2 = refine_env env e (neg t) in
             (* We do some marking in order to detect unreachable code *)
-            let id1 = identifier_of_expr e1 in
-            let id2 = identifier_of_expr e2 in
-            let logs1 = get_logs id1 in
-            let logs2 = get_logs id2 in
+            let logs1 = get_logs_expr e1 in
+            let logs2 = get_logs_expr e2 in
             let t1 = if is_bottom env1
-            then (set_logs id1 {logs1 with ignored=logs1.ignored+1} ; empty)
-            else (set_logs id1 {logs1 with visited=logs1.visited+1} ; self (env1, e1)) in
+            then (set_logs e1 {logs1 with ignored=logs1.ignored+1} ; empty)
+            else (set_logs e1 {logs1 with visited=logs1.visited+1} ; self (env1, e1)) in
             let t2 = if is_bottom env2
-            then (set_logs id2 {logs2 with ignored=logs2.ignored+1} ; empty)
-            else (set_logs id2 {logs2 with visited=logs2.visited+1} ; self (env2, e2)) in
+            then (set_logs e2 {logs2 with ignored=logs2.ignored+1} ; empty)
+            else (set_logs e2 {logs2 with visited=logs2.visited+1} ; self (env2, e2)) in
             cup t1 t2
         | Let (v, e1, e2) ->
             let env = ExprMap.add (unannot e1) (self (env, e1)) env in

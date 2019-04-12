@@ -8,7 +8,7 @@ open IO
 let print_logs () =
   let treat (exprid, data)  =
     if data.visited = 0 && data.ignored > 0
-    then Printf.printf "Warning: expression n°%i is unreachable!\n" exprid
+    then Printf.printf "Warning: %s\tExpression is unreachable!\n" (Position.string_of_pos data.position)
   in
   Seq.iter treat (all_logs ()) ;
   clear_logs ()
