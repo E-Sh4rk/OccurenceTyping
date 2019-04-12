@@ -7,23 +7,20 @@
      Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;
      exit 1
 
-   let annot e =
-    (new_dummy_annot (), e)
-
    let var_or_primitive = function
-     (*| Id "cos" -> Primitive Cos
-     | Id "sin" -> Primitive Sin
-     | Id "exp" -> Primitive Exp
-     | Id "inv" -> Primitive Inv
-     | Id "neg" -> Primitive Neg*)
-     | x -> annot (Var x)
+     | x -> Var x
 
    let rec tuple = function
      | [] -> assert false
      | [x] -> x
-     | x :: xs -> annot (Pair (tuple xs, x))
+     | x::xs ->
+      let left = x in let right = tuple xs in
+      let pos_left = Ast.position_of_expr left in
+      let pos_right = Ast.position_of_expr right in
+      (Ast.new_annot (Position.join pos_left pos_right), Pair (left,right))
 
-   let tuple xs = tuple (List.rev xs)
+    let annot sp ep e =
+      (Ast.new_annot (Position.lex_join sp ep), e)
 
 %}
 
@@ -90,22 +87,22 @@ name_and_typ: name=TID EQUAL t=typ { (name, t) }
 
 term:
   a=abstraction { a }
-| d=definition IN t=term { annot (Let (fst d, snd d, t)) }
+| d=definition IN t=term { annot $startpos $endpos (Let (fst d, snd d, t)) }
 (*| lhs=term b=binop rhs=term { App (App (Primitive b, lhs), rhs) }*)
 | t=simple_term { t }
-| IF t=term IS ty=typ THEN t1=term ELSE t2=term { annot (Ite (t,ty,t1,t2)) }
+| IF t=term IS ty=typ THEN t1=term ELSE t2=term { annot $startpos $endpos (Ite (t,ty,t1,t2)) }
 
 simple_term:
-  a=simple_term b=atomic_term { annot (App (a, b)) }
-| FST a=atomic_term { annot (Projection (Fst, a)) }
-| SND a=atomic_term { annot (Projection (Snd, a)) }
-| DEBUG str=LSTRING a=atomic_term { annot (Debug (str, a)) }
+  a=simple_term b=atomic_term { annot $startpos $endpos (App (a, b)) }
+| FST a=atomic_term { annot $startpos $endpos (Projection (Fst, a)) }
+| SND a=atomic_term { annot $startpos $endpos (Projection (Snd, a)) }
+| DEBUG str=LSTRING a=atomic_term { annot $startpos $endpos (Debug (str, a)) }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
 atomic_term:
-  x=identifier { var_or_primitive x }
-| l=literal { annot (Const l) }
+  x=identifier { annot $startpos $endpos (var_or_primitive x) }
+| l=literal { annot $startpos $endpos (Const l) }
 | LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }
 
 literal:
@@ -120,12 +117,12 @@ literal:
   FUN LPAREN ty=typ RPAREN vs=identifier+ ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
-  else annot (Lambda (ty, List.hd vs, t))
+  else annot $startpos $endpos (Lambda (ty, List.hd vs, t))
 }
 | FUN LPAREN self=identifier COLON ty=typ RPAREN vs=identifier+ ARROW t=term
 {
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
-  else annot (RecLambda (self, ty, List.hd vs, t))
+  else annot $startpos $endpos (RecLambda (self, ty, List.hd vs, t))
 }
 
 %inline definition: LET i=identifier EQUAL t=term
@@ -173,6 +170,6 @@ type_interval:
 | lb=LINT DOUBLEDASH TIMES { TInt (Some lb, None) }
 | TIMES DOUBLEDASH TIMES { TInt (None, None) }
 
-(*%inline located(X): x=X {
-  Position.with_poss $startpos $endpos x
+(*%inline annoted(X): x=X {
+  (Position.with_poss $startpos $endpos (unique_exprid ()), x)
 }*)

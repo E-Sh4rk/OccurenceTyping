@@ -16,7 +16,7 @@ type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 type exprid = int
 
-type annotation = int * Lexing.position
+type annotation = exprid Position.located
 
 type ('a, 'typ, 'v) ast =
 | Const of const
@@ -61,10 +61,11 @@ let unique_varid =
         !last_id
     )
 
-let identifier_of_expr ((id,_),_) = id
+let identifier_of_expr (a,_) = Position.value a
+let position_of_expr (a,_) = Position.position a
 
-let new_dummy_annot () =
-    (unique_exprid (), Lexing.dummy_pos)
+let new_annot p =
+    Position.with_pos p (unique_exprid ())
 
 let parser_expr_to_annot_expr tenv id_map e =
     let rec aux env (a,e) =

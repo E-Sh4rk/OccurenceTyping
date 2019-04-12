@@ -16,7 +16,7 @@ type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 type exprid = int
 
-type annotation = exprid * Lexing.position
+type annotation = exprid Position.located
 
 (* Could be a better definition but 'cyclic type' ... (actually not) *)
 (*
@@ -63,16 +63,15 @@ end
 module ExprMap : Map.S with type key = expr
 
 type id_map = int StrMap.t
-
 val empty_id_map : id_map
 
 val unique_exprid : unit -> exprid
-
 val unique_varid : unit -> varid
 
 val identifier_of_expr : (annotation, 'a, 'b) t -> exprid
+val position_of_expr : (annotation, 'a, 'b) t -> Position.t
 
-val new_dummy_annot : unit -> annotation
+val new_annot : Position.t -> annotation
 
 val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 

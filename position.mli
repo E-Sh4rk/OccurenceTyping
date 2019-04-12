@@ -8,10 +8,11 @@ type position = t
 
 (** Decoration of a value with a position. *)
 type 'a located =
-    {
+    (*{
       value    : 'a;
       position : t;
-    } [@@deriving sexp]
+    } [@@deriving sexp]*)
+    'a * t
 
 (** [value dv] returns the raw value that underlies the
     decorated value [dv]. *)

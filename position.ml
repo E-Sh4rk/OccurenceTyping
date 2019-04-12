@@ -11,45 +11,35 @@ type t =
 type position = t
 
 type 'a located =
-    {
+    (*{
       value    : 'a;
       position : t;
-    } [@@deriving sexp]
+    } [@@deriving sexp]*)
+    'a * t
 
-let value { value ; _ } =
-  value
+let value (v,_) = v
 
-let position { position ; _ } =
-  position
+let position (_,p) = p
 
-let destruct p =
-  (p.value, p.position)
+let destruct t =
+  (value t, position t)
 
 let located f x =
   f (value x)
 
-let with_pos p v =
-  {
-    value     = v;
-    position  = p;
-  }
+let with_pos p v = (v,p)
 
 let with_poss p1 p2 v =
   with_pos { start_p = p1; end_p = p2 } v
 
-let map f v =
-  {
-    value     = f v.value;
-    position  = v.position;
-  }
+let map f t = with_pos (position t) (f (value t))
 
-let iter f { value; _ } =
-  f value
+let iter f t = f (value t)
 
-let mapd f v =
-  let w1, w2 = f v.value in
-  let pos = v.position in
-    ({ value = w1; position = pos }, { value = w2; position = pos })
+let mapd f t =
+  let w1, w2 = f (value t) in
+  let p = position t in
+  (with_pos p w1, with_pos p w2)
 
 let dummy =
   {
@@ -57,11 +47,7 @@ let dummy =
     end_p   = Lexing.dummy_pos
   }
 
-let unknown_pos v =
-  {
-    value     = v;
-    position  = dummy
-  }
+let unknown_pos v = with_pos dummy v
 
 let start_of_position p = p.start_p
 

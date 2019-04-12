@@ -128,9 +128,7 @@ let appl1_ok =
      fun ( (Int | Bool) -> (Int | Bool) ) x2 ->
          if (x1 x2) is Int then plus x2 (x1 x2) else land x2 (x1 x2)
 
-(* This function does not type in our current typing system.
-   We could make it type by strengthening the back_typeof rule for LApp
-   (we should capture the fact that the application of the function has not diverged). *)
+(* This example need the new definition for the LApp case in order to type. *)
 
 let appl2 =
 
@@ -140,3 +138,22 @@ let appl2 =
    fun ( ( (Int|Char -> Int) | (Bool|Char -> Bool) ) -> Char -> Int) x1 ->
         fun (Char -> Int) x2 ->
                 if (x1 x2) is Int then incr (x1 (x1 x2)) else bti (x1 (x1 x2))
+
+
+(* Trying to find some more realistic examples... *)
+
+type String = Nil | (Char, String)
+
+(*
+let example =
+
+        let to_int = fun (Int | String -> Int) x -> if x is Int then x else magic in
+        let to_bool = fun (Bool | String -> Bool) x -> if x is Bool then x else magic in
+
+        fun (Bool -> String -> Int|Bool) toint ->
+
+                fun (String -> Int|Bool) x ->
+
+                        let f = if toint is True then to_int else to_bool in
+                        if f x is Int then f (f x) else f (f x)
+*)                    
