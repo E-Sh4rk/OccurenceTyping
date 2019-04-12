@@ -96,16 +96,3 @@ let square f out =
             diff (disj possibles) (disj impossibles)
     end in
     cap (domain f) (disj res)
-
-let remove_divergent_clauses f input_t =
-    let dnf = dnf f in
-    let clause_to_typ lst =
-        let fun_of (s,t) = mk_arrow (cons s) (cons t) in
-        conj (List.map fun_of lst)
-    in
-    let clauses = List.map clause_to_typ dnf in
-    let can_converge t =
-        not (is_empty (apply t input_t))
-    in
-    let clauses = List.filter can_converge clauses in
-    disj clauses

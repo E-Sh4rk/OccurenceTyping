@@ -113,10 +113,11 @@ let rec back_typeof_rev_open self (memo_t, env, e, t, p) =
     let t = match p with
     | [] -> t
     | LApp::p ->
-        let right = typeof (RApp::p) in
-        let t = mk_arrow (cons right) (cons (self p)) in
-        (*remove_divergent_clauses (cap t (typeof p)) right*) t
-        (* TODO *)
+        let left = typeof (RApp::p) in
+        let right = self p in
+        let t = mk_arrow (cons left) (cons right) in
+        let not_t = mk_arrow (cons left) (cons (neg right)) in
+        diff t not_t
     | RApp::p -> square (typeof (LApp::p)) (self p)
     | LPair::p -> pi1 (self p)
     | RPair::p -> pi2 (self p)
