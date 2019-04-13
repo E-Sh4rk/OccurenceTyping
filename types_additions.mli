@@ -11,6 +11,7 @@ type type_expr =
 | TBase of type_base
 | TCustom of string
 | TPair of type_expr * type_expr
+| TRecord of bool * (string * type_expr * bool) list
 | TArrow of type_expr * type_expr
 | TCup of type_expr * type_expr
 | TCap of type_expr * type_expr

@@ -1,26 +1,33 @@
 %{ (* Emacs, use -*- tuareg -*- to open this file. *)
 
-   open Ast
-   open Types_additions
+  open Ast
+  open Types_additions
 
-   let parsing_error pos msg =
-     Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;
-     exit 1
+  let parsing_error pos msg =
+    Printf.eprintf "%s:\n  %s\n" (Position.string_of_pos pos) msg;
+    exit 1
 
-   let var_or_primitive = function
-     | x -> Var x
+  let var_or_primitive = function
+    | x -> Var x
 
-   let rec tuple = function
-     | [] -> assert false
-     | [x] -> x
-     | x::xs ->
-      let left = x in let right = tuple xs in
-      let pos_left = Ast.position_of_expr left in
-      let pos_right = Ast.position_of_expr right in
-      (Ast.new_annot (Position.join pos_left pos_right), Pair (left,right))
+  let rec tuple = function
+    | [] -> assert false
+    | [x] -> x
+    | x::xs ->
+    let left = x in let right = tuple xs in
+    let pos_left = Ast.position_of_expr left in
+    let pos_right = Ast.position_of_expr right in
+    (Ast.new_annot (Position.join pos_left pos_right), Pair (left,right))
 
-    let annot sp ep e =
-      (Ast.new_annot (Position.lex_join sp ep), e)
+  let rec record_update base = function
+    | [] -> base
+    | (label,e)::fields ->
+      let pos = Position.join (position_of_expr base) (position_of_expr e) in
+      let base = (Ast.new_annot pos, RecordUpdate (base, label, Some e)) in
+      record_update base fields
+
+  let annot sp ep e =
+    (Ast.new_annot (Position.lex_join sp ep), e)
 
 %}
 
@@ -31,6 +38,7 @@
 %token ARROW AND OR NEG DIFF
 %token ANY EMPTY BOOL CHAR (*FLOAT*) INT TRUE FALSE UNIT
 %token DOUBLEDASH TIMES (*PLUS MINUS*)
+%token LBRACE RBRACE DOUBLEPOINT WITH EQUAL_OPT POINT
 %token ATOMS TYPE TYPE_AND
 (*%token LBRACKET RBRACKET SEMICOLON*)
 %token<string> ID
@@ -96,13 +104,21 @@ simple_term:
   a=simple_term b=atomic_term { annot $startpos $endpos (App (a, b)) }
 | FST a=atomic_term { annot $startpos $endpos (Projection (Fst, a)) }
 | SND a=atomic_term { annot $startpos $endpos (Projection (Snd, a)) }
+| a=atomic_term POINT id=identifier { annot $startpos $endpos (Projection (Field id, a)) }
+| a=atomic_term DIFF id=identifier { annot $startpos $endpos (RecordUpdate (a,id,None)) }
+| LBRACE a=simple_term WITH fs=separated_nonempty_list(COMMA, field_term) RBRACE { record_update a fs }
 | DEBUG str=LSTRING a=atomic_term { annot $startpos $endpos (Debug (str, a)) }
 (*| m=MINUS t=atomic_term { App (Primitive Neg, t) }*)
 | a=atomic_term { a }
 
+field_term:
+  id=identifier EQUAL t=simple_term { (id, t) }
+
 atomic_term:
   x=identifier { annot $startpos $endpos (var_or_primitive x) }
 | l=literal { annot $startpos $endpos (Const l) }
+| LBRACE fs=separated_list(COMMA, field_term) RBRACE
+  { record_update (annot $startpos $endpos (Const EmptyRecord)) fs }
 | LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }
 
 literal:
@@ -145,7 +161,13 @@ typ:
 | lhs=typ AND rhs=typ { TCap (lhs, rhs) }
 | lhs=typ OR rhs=typ  { TCup (lhs, rhs) }
 | lhs=typ DIFF rhs=typ  { TDiff (lhs, rhs) }
+| LBRACE fs=separated_list(COMMA, typ_field) RBRACE { TRecord (false, fs) }
+| LBRACE fs=separated_list(COMMA, typ_field) DOUBLEPOINT RBRACE { TRecord (true, fs) }
 | LPAREN t=typ RPAREN { t }
+
+typ_field:
+  id=identifier EQUAL t=typ { (id, t, false) }
+| id=identifier EQUAL_OPT t=typ { (id, t, true) }
 
 type_constant:
 (*  FLOAT { TyFloat }*)

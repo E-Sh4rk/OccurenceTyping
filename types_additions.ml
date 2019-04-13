@@ -11,6 +11,7 @@ type type_expr =
 | TBase of type_base
 | TCustom of string
 | TPair of type_expr * type_expr
+| TRecord of bool * (string * type_expr * bool) list
 | TArrow of type_expr * type_expr
 | TCup of type_expr * type_expr
 | TCap of type_expr * type_expr
@@ -37,6 +38,13 @@ let type_expr_to_typ env t =
         | TCustom k ->
             (try StrMap.find k env with Not_found -> failwith (Printf.sprintf "Type %s undefined!" k))
         | TPair (t1,t2) -> cons (mk_times (aux t1) (aux t2))
+        | TRecord (is_open, fields) ->
+            let aux' (label,t,opt) =
+                let t = descr (aux t) in
+                (label, cons (if opt then or_absent t else t))
+            in
+            let fields = List.map aux' fields in
+            cons (mk_record is_open fields)
         | TArrow (t1,t2) -> cons (mk_arrow (aux t1) (aux t2))
         | TCup (t1,t2) ->
             let t1 = descr (aux t1) in
