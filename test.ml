@@ -143,17 +143,20 @@ let appl2 =
 (* Trying to find some more realistic examples... *)
 
 type String = Nil | (Char, String)
+atom float
 
-(*
-let example =
+let str_plus_2 = (* For LApp *)
 
-        let to_int = fun (Int | String -> Int) x -> if x is Int then x else magic in
-        let to_bool = fun (Bool | String -> Bool) x -> if x is Bool then x else magic in
+        let incr_int = fun (Int | String -> Int) x -> magic in
+        let incr_float = fun (Float | String -> Float) x -> magic in
 
-        fun (Bool -> String -> Int|Bool) toint ->
+        fun (Bool -> String -> Int|Float) to_int ->
 
-                fun (String -> Int|Bool) x ->
+                fun (String -> Int|Float) x ->
 
-                        let f = if toint is True then to_int else to_bool in
+                        let f = if to_int is True then incr_int else incr_float in
                         if f x is Int then f (f x) else f (f x)
-*)                    
+                        (* We can't do 'f (f x)' directly (without the if)... is it a problem? *)
+                        (* If we want to handle this case, we should modify the rule for the application:
+                           when the argument is an union of types, we automatically treat all cases separately.
+                           (note: quite heuristic since Int is also an union of atoms...) *)

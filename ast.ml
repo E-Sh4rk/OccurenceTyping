@@ -117,30 +117,24 @@ let rec unannot (_,e) =
     in
     ( (), e )
 
-exception Found
 let rec substitute_var v ve (a,e) =
-    try
-    (
-        let e = match e with
-        | Const c -> Const c
-        | Var v' when v=v' -> raise Found
-        | Var v' -> Var v'
-        | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
-        | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
-        | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
-        | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
-        | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
-        | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
-        | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
-        | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
-        | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
-        | Projection (p, e) -> Projection (p, substitute_var v ve e)
-        | Debug (str, e) -> Debug (str, substitute_var v ve e)
-        in
-        (a,e)
-    )
-    with Found -> ve
-
+    let e = match e with
+    | Const c -> Const c
+    | Var v' when v=v' -> snd ve
+    | Var v' -> Var v'
+    | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
+    | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
+    | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
+    | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
+    | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
+    | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
+    | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
+    | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
+    | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
+    | Projection (p, e) -> Projection (p, substitute_var v ve e)
+    | Debug (str, e) -> Debug (str, substitute_var v ve e)
+    in
+    (a,e)
 
 let const_to_typ c =
     match c with

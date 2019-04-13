@@ -56,43 +56,13 @@ let set_logs e ld =
 
 exception Ill_typed of Position.t * string
 
-module IntMap = Map.Make(struct type t = int let compare = compare end)
-
-exception Found of int
-let eliminate_all_lets e =
-    let rec aux env (a,e) =
-        try
-        ( 
-            let e = match e with
-            | Const c -> Const c
-            | Var v when IntMap.mem v env -> raise (Found v)
-            | Var v -> Var v
-            | Lambda (t, v, e) -> Lambda (t, v, aux (IntMap.remove v env) e)
-            | RecLambda (s, t, v, e) ->
-                let env = IntMap.remove v (IntMap.remove s env) in
-                RecLambda (s, t, v, aux env e)
-            | Ite (e, t, e1, e2) -> Ite (aux env e, t, aux env e1, aux env e2)
-            | App (e1, e2) -> App (aux env e1, aux env e2)
-            | Let (v, e1, e2) ->
-                let e1 = aux env e1 in
-                Let (v, e1, aux (IntMap.add v e1 env) e2)
-            | Pair (e1, e2) -> Pair (aux env e1, aux env e2)
-            | Projection (p, e) -> Projection (p, aux env e)
-            | Debug (str, e) -> Debug (str, aux env e)
-            in
-            (a,e)
-        )
-        with Found v -> IntMap.find v env
-    in
-    aux IntMap.empty e
-
-let rec all_paths_for_expr rev_prefix (_,e) =
-    match e with
+let rec all_paths_for_expr rev_prefix e =
+    match snd e with
     | App (e1, e2) ->
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
-    | Let _ -> assert false (* Let bindings in tests must be eliminated before back-typing! *)
+    | Let _ -> raise (Ill_typed (position_of_expr e, "There can't be apparent lets in tests!"))
     | Pair (e1, e2) ->
         let p1 = all_paths_for_expr (LPair::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RPair::rev_prefix) e2 in
@@ -223,7 +193,6 @@ and typeof_memo ht =
 
 and refine_env env e t =
     (* No need to continue memoisation here because back_typeof never goes into Ite *)
-    let e = eliminate_all_lets e in
     let paths = all_paths_for_expr [] e in
     (* Deduce a type for each path *)
     let paths_t = optimized_back_typeof env e t paths in
