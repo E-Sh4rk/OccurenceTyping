@@ -3,6 +3,7 @@ open Ast
 
 type dir =
     | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg of string
+    | RProj of string | LRecord of string | RRecord of string
 
 type path = dir list
 

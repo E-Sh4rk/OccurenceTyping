@@ -12,6 +12,10 @@ let warning pos msg =
 let error pos msg =
   Format.printf "Error: %s\t%s\n" (Position.string_of_pos pos) msg
 
+
+
+let option_map f = function None -> None | Some e -> Some (f e)
+
 let memoize f input_transform ht =
   let rec aux input =
     let htbl_key = input_transform input in

@@ -5,6 +5,7 @@ open Types_additions
 
 type dir =
     | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg of string
+    | RProj of string | LRecord of string | RRecord of string
 
 type path = dir list
 
@@ -20,11 +21,15 @@ let rec follow_path (a,e) p =
     | Projection (Fst, e), PFst::p
     | Projection (Snd, e), PSnd::p
     | Debug (_, e), (Dbg _)::p
+    | Projection (Field _, e), (RProj _)::p
+    | RecordUpdate (e,_,_), (LRecord _)::p
+    | RecordUpdate (_,_,Some e), (RRecord _)::p
     -> follow_path e p
     | _, LApp::_ | _, RApp::_
     | _, LPair::_ | _, RPair::_
     | _, PFst::_ | _, PSnd::_
-    | _, (Dbg _)::_ -> raise Invalid_path
+    | _, (Dbg _)::_ | _, (RProj _)::_
+    | _, (LRecord _)::_ | _, (RRecord _)::_ -> raise Invalid_path
 
 type env = typ ExprMap.t
 let empty_env = ExprMap.empty
@@ -62,7 +67,8 @@ let rec all_paths_for_expr rev_prefix e =
         let p1 = all_paths_for_expr (LApp::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RApp::rev_prefix) e2 in
         (List.rev rev_prefix)::(p1@p2)
-    | Let _ -> raise (Ill_typed (position_of_expr e, "There can't be apparent lets in tests!"))
+    | Let _ ->
+        raise (Ill_typed (position_of_expr e, "There can't be apparent lets in tests!"))
     | Pair (e1, e2) ->
         let p1 = all_paths_for_expr (LPair::rev_prefix) e1 in
         let p2 = all_paths_for_expr (RPair::rev_prefix) e2 in
@@ -71,6 +77,14 @@ let rec all_paths_for_expr rev_prefix e =
         (List.rev rev_prefix)::(all_paths_for_expr (PFst::rev_prefix) e)
     | Projection (Snd, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr (PSnd::rev_prefix) e)
+    | Projection (Field str, e) ->
+        (List.rev rev_prefix)::(all_paths_for_expr ((RProj str)::rev_prefix) e)
+    | RecordUpdate (e1, str, None) ->
+        (List.rev rev_prefix)::(all_paths_for_expr ((LRecord str)::rev_prefix) e1)
+    | RecordUpdate (e1, str, Some e2) ->
+        let p1 = all_paths_for_expr ((LRecord str)::rev_prefix) e1 in
+        let p2 = all_paths_for_expr ((RRecord str)::rev_prefix) e2 in
+        (List.rev rev_prefix)::(p1@p2)
     | Debug (str, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr ((Dbg str)::rev_prefix) e)
     | Const _ | Var _ | Lambda _ | RecLambda _ | Ite _ -> [List.rev rev_prefix]
@@ -95,6 +109,12 @@ let rec back_typeof_rev_open self (memo_t, env, e, t, p) =
     | PFst::p -> mk_times (cons (self p)) any_node
     | PSnd::p -> mk_times any_node (cons (self p))
     | (Dbg str)::p -> let res = self p in Format.printf "%s (back_typeof): " str ; Utils.print_type res; res
+    | (RProj str)::p -> mk_record true [str, cons (self p)]
+    | (RRecord str)::p -> get_field (self p) str
+    | (LRecord str)::p ->
+        let left = remove_field (self p) str in
+        let right = mk_record false [str, any_or_absent_node] in
+        merge_records left right
     in
     cap t (typeof p)
 
@@ -176,6 +196,24 @@ and typeof_open self (env, e) =
             let t = self (env, e) in
             if subtype t pair_any then pi2 t
             else raise (Ill_typed (pos, "Snd can only be applied to a pair."))
+        | Projection (Field str, e) ->
+            let t = self (env, e) in
+            if subtype t record_any
+            then
+                try get_field t str
+                with Not_found ->
+                raise (Ill_typed (pos, Printf.sprintf "The record does not surely contains the field %s." str))
+            else raise (Ill_typed (pos, "Field projection can only be applied to a record."))
+        | RecordUpdate (e1, str, e2) ->
+            let t = self (env, e1) in
+            if subtype t record_any
+            then begin
+                match e2 with
+                | None -> remove_field t str
+                | Some e2 ->
+                    let t' = mk_record false [str, cons (self (env, e2))] in
+                    merge_records t t'
+            end else raise (Ill_typed (pos, "Field assignation can only be applied to a record."))
         | Debug (str, e) ->
             let res = self (env, e) in
             Format.printf "%s (typeof): " str ; Utils.print_type res ;

@@ -2,21 +2,22 @@
 open Types_additions
 type typ = Cduce.typ
 
-type const =
-| Magic
-| Unit
-| Bool of bool
-| Int of int
-| Char of char
-| Atom of string
-
-type projection = Fst | Snd
-
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 type exprid = int
 
 type annotation = exprid Position.located
+
+type const =
+| Magic
+| Unit
+| EmptyRecord
+| Bool of bool
+| Int of int
+| Char of char
+| Atom of string
+
+type projection = Fst | Snd | Field of string
 
 (* Could be a better definition but 'cyclic type' ... (actually not) *)
 (*
@@ -47,6 +48,7 @@ type ('a, 'typ, 'v) ast =
 | Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Pair of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Projection of projection * ('a, 'typ, 'v) t
+| RecordUpdate of ('a, 'typ, 'v) t * string * ('a, 'typ, 'v) t option
 | Debug of string * ('a, 'typ, 'v) t
 
 and ('a, 'typ, 'v) t = 'a * ('a, 'typ, 'v) ast

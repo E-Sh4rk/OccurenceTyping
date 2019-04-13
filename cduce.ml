@@ -64,24 +64,44 @@ let mk_times = CD.Types.times
 let pair_any = CD.Types.Product.any
 
 let pi1 t =
-    CD.Types.Product.pi1 (CD.Types.Product.get t)
+  CD.Types.Product.pi1 (CD.Types.Product.get t)
 
 let pi2 t =
-    CD.Types.Product.pi2 (CD.Types.Product.get t)
+  CD.Types.Product.pi2 (CD.Types.Product.get t)
 
 
-let mk_record opened fields =
-    let fields = List.map (fun (str,node) -> (to_label str,node)) fields in
-    let fields = LabelMap.from_list_disj fields in
-    CD.Types.record_fields (opened, fields)
+let mk_record is_open fields =
+  let fields = List.map (fun (str,node) -> (to_label str,node)) fields in
+  let fields = LabelMap.from_list_disj fields in
+  CD.Types.record_fields (is_open, fields)
+
+let record_any = CD.Types.Record.any
+
+let absent = CD.Types.Record.absent
+
+let any_or_absent = CD.Types.Record.any_or_absent
+
+let absent_node = CD.Types.Record.absent_node
+
+let any_or_absent_node = CD.Types.Record.any_or_absent_node
+
+let or_absent = CD.Types.Record.or_absent
+
+let empty_closed_record = CD.Types.empty_closed_record
+
+let empty_open_record = CD.Types.empty_open_record
 
 let get_field record field =
-    CD.Types.Record.project record (to_label field)
+  CD.Types.Record.project record (to_label field)
 
 let all_fields record =
-    let lbls = CD.Types.Record.all_labels record in
-    List.map from_label (LabelSet.get lbls)
+  let lbls = CD.Types.Record.all_labels record in
+  List.map from_label (LabelSet.get lbls)
 
+let merge_records = CD.Types.Record.merge
+
+let remove_field record field =
+  CD.Types.Record.remove_field record (to_label field)
 
 
 let is_empty = CD.Types.is_empty

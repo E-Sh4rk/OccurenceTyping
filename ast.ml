@@ -2,21 +2,22 @@
 open Types_additions
 type typ = Cduce.typ
 
-type const =
-| Magic
-| Unit
-| Bool of bool
-| Int of int
-| Char of char
-| Atom of string
-
-type projection = Fst | Snd
-
 type varname = string
 type varid = int (* It is NOT De Bruijn indexes, but unique IDs *)
 type exprid = int
 
 type annotation = exprid Position.located
+
+type const =
+| Magic
+| Unit
+| EmptyRecord
+| Bool of bool
+| Int of int
+| Char of char
+| Atom of string
+
+type projection = Fst | Snd | Field of string
 
 type ('a, 'typ, 'v) ast =
 | Const of const
@@ -28,6 +29,7 @@ type ('a, 'typ, 'v) ast =
 | Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Pair of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Projection of projection * ('a, 'typ, 'v) t
+| RecordUpdate of ('a, 'typ, 'v) t * string * ('a, 'typ, 'v) t option
 | Debug of string * ('a, 'typ, 'v) t
 
 and ('a, 'typ, 'v) t = 'a * ('a, 'typ, 'v) ast
@@ -96,6 +98,8 @@ let parser_expr_to_annot_expr tenv id_map e =
         | Pair (e1, e2) ->
             Pair (aux env e1, aux env e2)
         | Projection (p, e) -> Projection (p, aux env e)
+        | RecordUpdate (e1, l, e2) ->
+            RecordUpdate (aux env e1, l, Utils.option_map (aux env) e2)
         | Debug (str, e) -> Debug (str, aux env e)
         in
         (a,e)
@@ -113,6 +117,8 @@ let rec unannot (_,e) =
     | Let (v, e1, e2) -> Let (v, unannot e1, unannot e2)
     | Pair (e1, e2) -> Pair (unannot e1, unannot e2)
     | Projection (p, e) -> Projection (p, unannot e)
+    | RecordUpdate (e1, l, e2) ->
+        RecordUpdate (unannot e1, l, Utils.option_map unannot e2)
     | Debug (str, e) -> Debug (str, unannot e)
     in
     ( (), e )
@@ -132,6 +138,8 @@ let rec substitute_var v ve (a,e) =
     | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
     | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
     | Projection (p, e) -> Projection (p, substitute_var v ve e)
+    | RecordUpdate (e1, l, e2) ->
+        RecordUpdate (substitute_var v ve e1, l, Utils.option_map (substitute_var v ve) e2)
     | Debug (str, e) -> Debug (str, substitute_var v ve e)
     in
     (a,e)
@@ -139,11 +147,12 @@ let rec substitute_var v ve (a,e) =
 let const_to_typ c =
     match c with
     | Magic -> Cduce.empty
+    | Unit -> Cduce.unit_typ
+    | EmptyRecord -> Cduce.empty_closed_record
     | Bool true -> Cduce.true_typ
     | Bool false -> Cduce.false_typ
     | Int i -> Cduce.interval (Some i) (Some i)
     | Char c -> Cduce.single_char c
-    | Unit -> Cduce.unit_typ
     | Atom t ->
         failwith (Printf.sprintf "Can't retrieve the type of the atom %s." t)
 

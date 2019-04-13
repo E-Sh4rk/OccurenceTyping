@@ -42,8 +42,18 @@ val pi1 : typ -> typ
 val pi2 : typ -> typ
 
 val mk_record : bool -> (string * node) list -> typ
-val get_field : typ -> string -> typ
+val record_any : typ
+val absent : typ
+val any_or_absent : typ
+val absent_node : node
+val any_or_absent_node : node
+val or_absent : typ -> typ
+val empty_closed_record : typ
+val empty_open_record : typ
+val get_field : typ -> string -> typ (* Can raise Not_found *)
 val all_fields : typ -> string list
+val merge_records : typ -> typ -> typ
+val remove_field : typ -> string -> typ
 
 val mk_arrow : node -> node -> typ
 val arrow_any : typ
