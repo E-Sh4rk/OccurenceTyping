@@ -113,6 +113,29 @@ let custom_sum =
                         then plus i (self tl)
                         else self tl
 
+(* Examples with records *)
+
+let records_fail =
+
+        let destruct = fun ({id=Int} -> Int) x -> x.id in
+        let record = { id=0, name='a' } in
+        destruct record
+
+let records_ok =
+
+        let destruct = fun ({id=Int ..} -> Int) x -> x.id in
+        let record = {id=0, name='a'} in
+        destruct record
+
+let records_fail2 =
+
+        fun ({..} -> Any) x ->
+                if {x with a=0} is {a=Int ..} then x.a else 0
+
+let paper_example =
+
+        fun ({..} -> Bool) x ->
+                if {x with a=0} is {a=Int, b=Bool ..} | {a=Bool, b=Int ..} then x.b else false
 
 (* Some tests of the paper *)
 
