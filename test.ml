@@ -50,7 +50,7 @@ let let_pairs_ok =
         if x is (Int, Any) then plus y z else land (lnot y) z
 
 (* Example that shows that backtyping is stronger if we intersect with the environment as soon as possible *)
-(* Also need the improved version of the square operator *)
+(* Also need the improved version of the worra operator *)
 
 let two_steps =
 
@@ -183,3 +183,11 @@ let str_plus_2 = (* For LApp *)
                         (* If we want to handle this case, we should modify the rule for the application:
                            when the argument is an union of types, we automatically treat all cases separately.
                            (note: quite heuristic since Int is also an union of atoms...) *)
+
+(* Example that need the optiaml version of the worra operator *)
+
+let need_optimal_worra =
+
+        fun ((Any->Any) & (~Bool->~True) & (~Bool->~False) -> Any -> Bool) f ->
+                fun (Any -> Bool) x ->
+                        if f x is Bool then x else false

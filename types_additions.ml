@@ -91,16 +91,36 @@ let get_atom env atom =
 let conj ts = List.fold_left cap any ts
 let disj ts = List.fold_left cup empty ts
 
-let square f out =
+let square_approx f out =
     let dnf = dnf f in
     let res = dnf |> List.map begin
         fun lst ->
-            let lst = lst |> List.map begin
-                fun (s,t) -> if is_empty (cap out t) then (s,false) else (s,true)
-                (* Does not work with polymorphism (s should be instanciated...) *)
-            end in
-            let possibles = List.filter (function (_,b) -> b) lst |> List.map fst in
-            let impossibles = List.filter (function (_,b) -> not b) lst |> List.map fst in
-            diff (disj possibles) (disj impossibles)
+            let is_impossible (_,t) = is_empty (cap out t) in
+            let impossibles = List.filter is_impossible lst |> List.map fst in
+            neg (disj impossibles)
     end in
     cap (domain f) (disj res)
+
+let rec take_one lst =
+    match lst with
+    | [] -> []
+    | e::lst ->
+        (e, lst)::(List.map (fun (e',lst) -> (e',e::lst)) (take_one lst))
+
+let square_exact f out =
+    let dnf = dnf f in
+    let res = dnf |> List.map begin
+        fun lst ->
+            let rec impossible_inputs current_set lst =
+                let t = List.map snd current_set in
+                if subtype out (neg (conj t)) then [conj (List.map fst current_set)]
+                else begin
+                    let aux (e,lst) = impossible_inputs (e::current_set) lst in
+                    List.flatten (List.map aux (take_one lst))
+                end
+            in
+            neg (disj (impossible_inputs [] lst))
+    end in
+    cap (domain f) (disj res)
+
+let square = square_exact (* You can switch between square_exact and square_approx *)
