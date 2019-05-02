@@ -147,8 +147,10 @@ and typeof_open self (env, e) =
                 in
                 List.for_all is_valid conj
             in
-            if List.exists valid_type dnf then t
-            else raise (Ill_typed (pos, "Wrong type for the lambda-abstraction."))
+            if List.length dnf = 1 then
+                if List.exists valid_type dnf then t
+                else raise (Ill_typed (pos, "Wrong type for the lambda-abstraction."))
+            else raise (Ill_typed (pos, "A lambda-abstraction type can't be an union (it is a value)."))
         else raise (Ill_typed (pos, "A lambda-abstraction must have an arrow type!"))
     in
 
