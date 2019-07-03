@@ -161,8 +161,10 @@ and typeof_open self (env, e) =
     let unannoted = unannot e in
     match ExprMap.find_opt unannoted env with
     | Some t ->
-        let env = ExprMap.remove unannoted env in
-        cap t (self (env,e))
+        begin match unannoted with
+        | ((), Var _) | ((), Const (Atom _)) -> t
+        | _ -> let env = ExprMap.remove unannoted env in cap t (self (env,e))
+        end
     | None ->
         begin match snd e with
         | Const c -> const_to_typ c
