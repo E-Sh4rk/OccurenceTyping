@@ -7,6 +7,9 @@ type dir =
 
 type path = dir list
 
+val global_n0 : unit -> int
+val set_global_n0 : int -> unit
+
 exception Invalid_path
 
 val follow_path : ('c, 'b, 'a) t -> path -> ('c, 'b, 'a) t

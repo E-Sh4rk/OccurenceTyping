@@ -9,6 +9,10 @@ type dir =
 
 type path = dir list
 
+let n0 = ref 10
+let global_n0 () = !n0
+let set_global_n0 n = n0 := n
+
 exception Invalid_path
 
 let rec follow_path (a,e) p =
@@ -154,8 +158,11 @@ and typeof_open self (env, e) =
         else raise (Ill_typed (pos, "A lambda-abstraction must have an arrow type!"))
     in
 
-    match ExprMap.find_opt (unannot e) env with
-    | Some t -> t
+    let unannoted = unannot e in
+    match ExprMap.find_opt unannoted env with
+    | Some t ->
+        let env = ExprMap.remove unannoted env in
+        cap t (self (env,e))
     | None ->
         begin match snd e with
         | Const c -> const_to_typ c
@@ -245,11 +252,17 @@ and refine_env env e t =
     in
     let map = List.fold_left add_path ExprMap.empty paths in
     (* Refine the type for each expression *)
-    let refine_for_expr acc (e, paths) =
-        let types = List.map (fun p -> PathMap.find p paths_t) paths in
-        ExprMap.add e (conj types) acc
+    let rec refine_until_fp n env =
+        if n=0 then env else begin
+            let refine_for_expr acc (e, paths) =
+                let types = List.map (fun p -> PathMap.find p paths_t) paths in
+                ExprMap.add e (conj types) acc
+            in
+            let env' = List.fold_left refine_for_expr env (ExprMap.bindings map) in
+            if ExprMap.equal equiv env env' then env' else refine_until_fp (n-1) env'
+        end
     in
-    List.fold_left refine_for_expr env (ExprMap.bindings map)
+    refine_until_fp (!n0) env
 
 let typeof = typeof_no_memo ()
 let back_typeof = back_typeof_no_memo ()
