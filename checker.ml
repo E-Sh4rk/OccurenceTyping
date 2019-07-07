@@ -1,4 +1,3 @@
-
 open Cduce
 open Ast
 open Types_additions
@@ -63,6 +62,25 @@ let get_logs_expr e =
 let set_logs e ld =
     Hashtbl.replace logs (identifier_of_expr e) ld
 
+
+(* ugly *)
+let inf_table = Hashtbl.create 23
+module TySet = Set.Make(Cduce_lib.Types)
+let record_inf v t =
+  if not (is_empty t) then
+    let tset =
+      match Hashtbl.find_opt inf_table v with
+        Some ts -> ts
+      | None -> TySet.empty
+    in
+    Hashtbl.replace inf_table v (TySet.add t tset)
+
+let get_inf_types v =
+  TySet.elements (Hashtbl.find inf_table v)
+
+
+
+
 exception Ill_typed of Position.t * string
 
 let rec all_paths_for_expr rev_prefix e =
@@ -91,7 +109,7 @@ let rec all_paths_for_expr rev_prefix e =
         (List.rev rev_prefix)::(p1@p2)
     | Debug (str, e) ->
         (List.rev rev_prefix)::(all_paths_for_expr ((Dbg str)::rev_prefix) e)
-    | Const _ | Var _ | Lambda _ | RecLambda _ | Ite _ -> [List.rev rev_prefix]
+    | Const _ | Var _ | Lambda _ | RecLambda _ | InfLambda _ | Ite _ -> [List.rev rev_prefix]
 
 module PathMap = Map.Make(struct type t = path let compare = compare end)
 
@@ -162,7 +180,8 @@ and typeof_open self (env, e) =
     match ExprMap.find_opt unannoted env with
     | Some t ->
         begin match unannoted with
-        | ((), Var _) | ((), Const (Atom _)) -> t
+        | ((), Var v) -> record_inf v t;t
+        | ((), Const (Atom _)) -> t
         | _ -> let env = ExprMap.remove unannoted env in cap t (self (env,e))
         end
     | None ->
@@ -170,6 +189,19 @@ and typeof_open self (env, e) =
         | Const c -> const_to_typ c
         | Lambda (t,v,e) -> type_lambda (None,t,v,e)
         | RecLambda (s,t,v,e) -> type_lambda (Some s,t,v,e)
+        | InfLambda (t, v, e) ->
+          let env2 = ExprMap.add ((), Var v) t env in
+          let out_t = self (env2, e) in
+          let acc_arrow = mk_arrow (cons t) (cons out_t) in
+          let psi = List.filter (fun in_t -> not (equiv in_t t)) (get_inf_types v) in
+          List.fold_left (fun acc in_t ->
+              let env = ExprMap.add ((), Var v) in_t env in
+              try
+                let out_t = self (env, e) in
+                cap acc (mk_arrow (cons in_t) (cons out_t))
+              with
+                Ill_typed (_, s) -> acc
+            ) acc_arrow psi
         | App (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
@@ -243,7 +275,7 @@ and refine_env env e t =
     let paths = all_paths_for_expr [] e in
     (* Deduce a type for each path *)
     let paths_t = optimized_back_typeof env e t paths in
-    let paths_t = List.fold_left2 (fun acc p t -> PathMap.add p t acc) PathMap.empty paths paths_t in 
+    let paths_t = List.fold_left2 (fun acc p t -> PathMap.add p t acc) PathMap.empty paths paths_t in
     (* Build a map from sub-expressions (occurrences) to paths *)
     let add_path acc p =
         let e = unannot (follow_path e p) in
@@ -257,8 +289,13 @@ and refine_env env e t =
     let rec refine_until_fp n env =
         if n=0 then env else begin
             let refine_for_expr acc (e, paths) =
-                let types = List.map (fun p -> PathMap.find p paths_t) paths in
-                ExprMap.add e (conj types) acc
+              let types = List.map (fun p -> PathMap.find p paths_t) paths in
+              let conj_t = conj types in
+              let () = match e with
+                  (_, Var v) -> record_inf v conj_t
+                | _ -> ()
+              in
+              ExprMap.add e conj_t acc
             in
             let env' = List.fold_left refine_for_expr env (ExprMap.bindings map) in
             if ExprMap.equal equiv env env' then env' else refine_until_fp (n-1) env'

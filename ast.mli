@@ -43,6 +43,7 @@ type ('a, 'typ, 'v) ast =
 | Var of 'v
 | Lambda of 'typ * 'v * ('a, 'typ, 'v) t
 | RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
+| InfLambda of 'typ * 'v * ('a, 'typ, 'v) t
 | Ite of ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | App of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t

@@ -6,7 +6,7 @@ module LabelMap = CD.Ident.LabelMap
 type typ = CD.Types.t
 type node = CD.Types.Node.t
 
-
+let pp = CD.Types.Print.pp_type
 let printf = CD.Types.Print.printf
 let dump = CD.Types.Print.dump
 let string_of_type = CD.Types.Print.string_of_type

@@ -140,6 +140,10 @@ literal:
   if List.length vs > 1 then failwith "Fun with multiple arguments not supported yet!"
   else annot $startpos $endpos (RecLambda (self, ty, List.hd vs, t))
 }
+| FUN LPAREN arg = identifier COLON ty = typ RPAREN ARROW t = term
+{
+  annot $startpos $endpos (InfLambda (ty, arg, t))
+}
 
 %inline definition: LET i=identifier EQUAL t=term
 {

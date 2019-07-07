@@ -1,4 +1,3 @@
-
 open Cduce
 open Ast
 open Types_additions

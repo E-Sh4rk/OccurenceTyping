@@ -1,4 +1,3 @@
-
 open Types_additions
 type typ = Cduce.typ
 
@@ -24,6 +23,7 @@ type ('a, 'typ, 'v) ast =
 | Var of 'v
 | Lambda of 'typ * 'v * ('a, 'typ, 'v) t
 | RecLambda of 'v * 'typ * 'v * ('a, 'typ, 'v) t
+| InfLambda of 'typ * 'v * ('a, 'typ, 'v) t
 | Ite of ('a, 'typ, 'v) t * 'typ * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | App of ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
 | Let of 'v * ('a, 'typ, 'v) t * ('a, 'typ, 'v) t
@@ -81,6 +81,10 @@ let parser_expr_to_annot_expr tenv id_map e =
             let varid = unique_varid () in
             let env = StrMap.add str varid env in
             Lambda (type_expr_to_typ tenv t, varid, aux env e)
+        | InfLambda (t, str, e) ->
+            let varid = unique_varid () in
+            let env = StrMap.add str varid env in
+            InfLambda (type_expr_to_typ tenv t, varid, aux env e)
         | RecLambda (recstr,t,str,e) ->
             let recvarid = unique_varid () in
             let varid = unique_varid () in
@@ -112,6 +116,7 @@ let rec unannot (_,e) =
     | Var v  -> Var v
     | Lambda (t, v, e) -> Lambda (t, v, unannot e)
     | RecLambda (s, t, v, e) -> RecLambda (s, t, v, unannot e)
+    | InfLambda (t, v, e) -> InfLambda (t, v, unannot e)
     | Ite (e, t, e1, e2) -> Ite (unannot e, t, unannot e1, unannot e2)
     | App (e1, e2) -> App (unannot e1, unannot e2)
     | Let (v, e1, e2) -> Let (v, unannot e1, unannot e2)
@@ -132,6 +137,8 @@ let rec substitute_var v ve (a,e) =
     | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
     | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
     | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
+    | InfLambda (t, v', e) when v=v' -> InfLambda (t, v', e)
+    | InfLambda (t, v', e) -> InfLambda (t, v', substitute_var v ve e)
     | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
     | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
     | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
