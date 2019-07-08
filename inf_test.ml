@@ -1,3 +1,28 @@
+atom nil
+type IntBoolList = Nil | (Int|Bool, IntBoolList)
+type String = Nil | (Char, String)
+
+
+type DocumentNode = { nodeType=9 ..}
+and NodeList = Nil | (Node, NodeList)
+and ElementNode = { nodeType=1,
+                   childNodes = NodeList
+                  ..}
+
+and TextNode = { nodeType=3,
+                 isElementContentWhiteSpace=Bool
+                ..}
+and Node = DocumentNode | ElementNode | TextNode
+
+let is_empty_node =
+  fun (x : Node) ->
+  if x.nodeType is 9 then false
+  else if x.nodeType is 3 then
+    x.isElementContentWhiteSpace
+  else
+  if x.childNodes is Nil then true else false
+
+
 (* Basic functions *)
 let incr =
     fun (Int -> Int) i -> magic
@@ -30,9 +55,6 @@ let any_inf =
   if x is Bool then lnot x else
     x
 
-atom nil
-type IntBoolList = Nil | (Int|Bool, IntBoolList)
-
 let map =
   fun (loop : ((Int -> Int)&(Bool -> Bool)) -> IntBoolList -> IntBoolList) f ->
   fun (l : IntBoolList) ->
@@ -43,7 +65,6 @@ let map =
     else loop f l
 
 
-type String = Nil | (Char, String)
 
 
 
@@ -107,7 +128,8 @@ let complex =
 let test_1 = complex 3 true
 let test_2 = complex (1,1) 1
 let test_3 = complex nil nil
-let test_3_b = complex nil
+
+
 
 
 
@@ -143,4 +165,4 @@ let test_4 =
         false) is True then
     plus x (strlen y)
   else 0
-    
+
