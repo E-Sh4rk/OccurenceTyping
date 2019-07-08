@@ -66,17 +66,36 @@ let set_logs e ld =
 (* ugly *)
 let inf_table = Hashtbl.create 23
 module TySet = Set.Make(Cduce_lib.Types)
+
+let init_inf v =
+  Hashtbl.replace inf_table v (true, TySet.empty)
+
+let next_inf v =
+  let _, ts = Hashtbl.find inf_table v in
+  Hashtbl.add inf_table v (false, ts)
+
+let next_inf v =
+  try next_inf v with Not_found -> assert false
+    
+let is_initial v =
+  fst (Hashtbl.find inf_table v)
+
+let is_initial v =
+  try is_initial v with Not_found -> assert false
+
 let record_inf v t =
   if not (is_empty t) then
-    let tset =
-      match Hashtbl.find_opt inf_table v with
-        Some ts -> ts
-      | None -> TySet.empty
+    let init, tset = Hashtbl.find inf_table v
     in
-    Hashtbl.replace inf_table v (TySet.add t tset)
+    Hashtbl.replace inf_table v (init, TySet.add t tset)
+
+let record_inf v t =
+  try record_inf v t with Not_found -> init_inf v; record_inf v t
 
 let get_inf_types v =
-  TySet.elements (Hashtbl.find inf_table v)
+  match Hashtbl.find_opt inf_table v with
+    Some t -> TySet.elements (snd t)
+  | None -> []
 
 
 
@@ -190,23 +209,43 @@ and typeof_open self (env, e) =
         | Lambda (t,v,e) -> type_lambda (None,t,v,e)
         | RecLambda (s,t,v,e) -> type_lambda (Some s,t,v,e)
         | InfLambda (t, v, e) ->
+          let _ = init_inf v in
           let env2 = ExprMap.add ((), Var v) t env in
-          let out_t = self (env2, e) in
-          let acc_arrow = mk_arrow (cons t) (cons out_t) in
+          let _ = self (env2, e) in
+          let _ = next_inf v in
           let psi = List.filter (fun in_t -> not (equiv in_t t)) (get_inf_types v) in
-          List.fold_left (fun acc in_t ->
+          let psi_arrows = List.fold_left (fun acc in_t ->
               let env = ExprMap.add ((), Var v) in_t env in
               try
                 let out_t = self (env, e) in
-                cap acc (mk_arrow (cons in_t) (cons out_t))
+                (in_t, out_t) :: acc
               with
                 Ill_typed (_, s) -> acc
-            ) acc_arrow psi
+            ) [] psi
+          in
+          let dom_rem = diff t (List.fold_left (fun acc (ti,_) -> cup acc ti) empty psi_arrows) in
+          let acc_arrows = if is_empty dom_rem then any else
+              let env2 = ExprMap.add ((), Var v) dom_rem env in
+              let out_t = self (env2, e) in
+              mk_arrow (cons dom_rem) (cons out_t)
+          in
+          List.fold_left (fun acc (u,v) -> cap acc (mk_arrow (cons u) (cons v))) acc_arrows psi_arrows
         | App (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
-            if subtype t2 (domain t1) then apply t1 t2
-            else raise (Ill_typed (pos, "Bad domain for the application."))
+            let out_t = if subtype t2 (domain t1) then apply t1 t2
+              else raise (Ill_typed (pos, "Bad domain for the application."))
+            in
+            let () = match e2 with
+                (_, Var v) ->
+                if is_initial v then
+                  let u_arrows = dnf t1 in
+                  List.iter (fun i_arrows ->
+                      List.iter (fun (t, _) -> record_inf v (cap t t2)) i_arrows
+                    ) u_arrows
+              | _ -> ()
+            in
+            out_t
         | Ite (e,t,e1,e2) ->
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
