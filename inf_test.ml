@@ -165,4 +165,3 @@ let test_4 =
         false) is True then
     plus x (strlen y)
   else 0
-
