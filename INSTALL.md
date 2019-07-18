@@ -23,6 +23,20 @@ make install
 cp lib/* ~/.opam/4.07.0/lib/cduce/
 ```
 
+### Compiling CDuce with js_of_ocaml
+```
+eval `opam config env`
+git clone -b cduce-next git@gitlab.math.univ-paris-diderot.fr:cduce/cduce.git
+cd cduce
+sudo apt install m4
+opam install num js_of_ocaml js_of_ocaml-ppx
+./configure  --without-pxp --without-expat --without-netclient --without-netstring --prefix=~/usr/local
+make all
+make install
+cp lib/* ~/.opam/4.07.0/lib/cduce/
+```
+
+
 ## Compiling the project
 
 ```
@@ -38,10 +52,10 @@ NOTE: there are a lot of dependencies in the file `_tags`. Actually, the only de
 
 ## If it does not work
 
-You can still download a minimal virtual machine with everything installed:  
+You can still download a minimal virtual machine with everything installed:
 https://mega.nz/#!NhJEwI6R!Ig4dqSsr-FUgvdJ5L-Os-m5MC6kYUJ5vWfMQSWclNnk
 
-OS: Ubuntu 18 x64 (need 9 Go on hard disk)  
-Format: Oracle VM VirtualBox  
-Username: Ubuntu  
+OS: Ubuntu 18 x64 (need 9 Go on hard disk)
+Format: Oracle VM VirtualBox
+Username: Ubuntu
 Password: ubuntu
