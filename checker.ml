@@ -253,12 +253,16 @@ and typeof_open self (env, e) =
             (* We do some marking in order to detect unreachable code *)
             let logs1 = get_logs_expr e1 in
             let logs2 = get_logs_expr e2 in
-            let t1 = if is_bottom env1
+            let bottom_1 = is_bottom env1 in
+            let t1 = if bottom_1
             then (set_logs e1 {logs1 with ignored=logs1.ignored+1} ; empty)
             else (set_logs e1 {logs1 with visited=logs1.visited+1} ; self (env1, e1)) in
             let t2 = if is_bottom env2
-            then (set_logs e2 {logs2 with ignored=logs2.ignored+1} ; empty)
-            else (set_logs e2 {logs2 with visited=logs2.visited+1} ; self (env2, e2)) in
+              then
+                (* Remove false to experiment with failure instead of empty *)
+                if false && bottom_1 then raise (Ill_typed (pos, "No branch can be selected"))
+                else (set_logs e2 {logs2 with ignored=logs2.ignored+1} ; empty)
+              else (set_logs e2 {logs2 with visited=logs2.visited+1} ; self (env2, e2)) in
             cup t1 t2
         | Let (v, e1, e2) ->
             let env = ExprMap.add (unannot e1) (self (env, e1)) env in
