@@ -322,10 +322,12 @@ and typeof_no_memo _ =
     let typeof = Utils.do_not_memoize typeof_open in
     fun env e -> typeof (env, e)
 
-and typeof_memo ht =
+(* TODO: Memoisation temporarily disabled because incompatible with InfLambda. Fix it. *)
+(*and typeof_memo ht =
     let path_select (_,e) = identifier_of_expr e in
     let typeof = Utils.memoize typeof_open path_select ht in
-    fun env e -> typeof (env, e)
+    fun env e -> typeof (env, e)*)
+and typeof_memo _ = typeof_no_memo ()
 
 and refine_env env e t =
     (* No need to continue memoisation here because back_typeof never goes into Ite *)

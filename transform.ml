@@ -23,27 +23,29 @@ let rec substitute_var v ve (a,e) =
     in
     (a,e)
 
-(* TODO: Debug (fail for test str_plus_2) *)
 let abstract_unabstracted_ite aexpr (varenv:typ VarIdMap.t) =
   let rec aux (annot, expr) =
     let annot = copy_annot annot in
     match expr with
     | Const _ | Var _ | Lambda _ | RecLambda _ | InfLambda _ -> (annot, expr)
-    | Ite (e, t, e1, e2) ->
+    | Ite _ ->
       let abstract_var (annot, expr) v =
         let annot1 = copy_annot annot in
         let annot2 = copy_annot annot in
-        let annot3 = copy_annot annot in
-        let annot4 = copy_annot annot in
         let t = VarIdMap.find v varenv in
         let newvar = unique_varid () in
         let new_ite = substitute_var v (annot1, Var newvar) (annot, expr) in
         let lambda_type = t in
-        let abs = (annot2, InfLambda (lambda_type, newvar, new_ite)) in
-        (annot4, App (abs, (annot3, Var v)))
+        (annot2, InfLambda (lambda_type, newvar, new_ite))
       in
       let free_vars = (List.of_seq (VarIdSet.to_seq (fv (annot, expr)))) in
-      List.fold_left abstract_var (annot, expr) free_vars
+      let abs = List.fold_left abstract_var (annot, expr) free_vars in
+      let app_var (annot, expr) v =
+        let annot1 = copy_annot annot in
+        let annot2 = copy_annot annot in
+        (annot2, App ((annot, expr), (annot1, Var v)))
+      in
+      List.fold_left app_var abs (List.rev free_vars)
     | App (e1, e2) -> (annot, App (aux e1, aux e2))
     | Let (v, e1, e2) -> assert false
     | Pair (e1, e2) -> (annot, Pair (aux e1, aux e2))
