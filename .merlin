@@ -2,4 +2,4 @@ S .
 
 B _build
 
-PKG dynlink camlp4.lib ulex unix num str pcre expat pxp curl cduce
+PKG dynlink camlp4.lib ulex unix num str pcre expat pxp curl cduce js_of_ocaml js_of_ocaml.ppx

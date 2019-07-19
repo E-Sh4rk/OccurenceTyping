@@ -4,6 +4,7 @@ open Types_additions
 open Checker
 open IO
 open Js_of_ocaml
+
 let pr str =
   let output = Dom_html.getElementById "output" in
   output##.innerHTML :=
