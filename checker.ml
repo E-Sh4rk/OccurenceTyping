@@ -234,8 +234,13 @@ and typeof_open self (env, e) =
         | App (e1, e2) ->
             let t1 = self (env, e1) in
             let t2 = self (env, e2) in
-            let out_t = if subtype t2 (domain t1) then apply t1 t2
-              else raise (Ill_typed (pos, "Bad domain for the application."))
+            let dom_t1 = domain t1 in
+            let out_t = if subtype t2 dom_t1 then apply t1 t2
+              else
+              let error = Printf.sprintf
+              "Bad domain for the application: expected %s - found: %s" 
+              (string_of_type dom_t1) (string_of_type t2) in
+              raise (Ill_typed (pos, error))
             in
             let () = match e2 with
                 (_, Var v) ->

@@ -75,6 +75,9 @@ let position_of_expr (a,_) = Position.position a
 let new_annot p =
     Position.with_pos p (unique_exprid ())
 
+let copy_annot a =
+    new_annot (Position.position a)
+
 let parser_expr_to_annot_expr tenv id_map e =
     let rec aux env (a,e) =
         let e = match e with
@@ -134,7 +137,7 @@ let rec unannot (_,e) =
     in
     ( (), e )
 
-let rec fv (annot, expr) =
+let rec fv (_, expr) =
   match expr with
   | Const c -> VarIdSet.empty
   | Var v -> VarIdSet.singleton v

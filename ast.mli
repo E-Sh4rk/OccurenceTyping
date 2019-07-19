@@ -77,6 +77,7 @@ val identifier_of_expr : (annotation, 'a, 'b) t -> exprid
 val position_of_expr : (annotation, 'a, 'b) t -> Position.t
 
 val new_annot : Position.t -> annotation
+val copy_annot : annotation -> annotation
 
 val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 

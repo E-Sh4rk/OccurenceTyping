@@ -23,35 +23,33 @@ let rec substitute_var v ve (a,e) =
     in
     (a,e)
 
+(* TODO: Debug (fail for test str_plus_2) *)
 let abstract_unabstracted_ite aexpr (varenv:typ VarIdMap.t) =
   let rec aux (annot, expr) =
-    let expr' = match expr with
-    | Const c -> Const c
-    | Var v  -> Var v
-    | Lambda (t, v, e) -> Lambda (t, v, e)
-    | RecLambda (s, t, v, e) -> RecLambda (s, t, v, e)
-    | InfLambda (t, v, e) -> InfLambda (t, v, e)
+    let annot = copy_annot annot in
+    match expr with
+    | Const _ | Var _ | Lambda _ | RecLambda _ | InfLambda _ -> (annot, expr)
     | Ite (e, t, e1, e2) ->
       let abstract_var (annot, expr) v =
+        let annot1 = copy_annot annot in
+        let annot2 = copy_annot annot in
+        let annot3 = copy_annot annot in
+        let annot4 = copy_annot annot in
         let t = VarIdMap.find v varenv in
         let newvar = unique_varid () in
-        let new_ite = substitute_var v (annot, Var newvar) (annot, expr) in
-        let lambda_type = (* Cduce.mk_arrow (Cduce.cons *) t(* ) Cduce.any_node *) in
-        (* TODO : DEBUG *)
-        let abs = (annot, InfLambda (lambda_type, newvar, new_ite)) in
-        (annot, App (abs, (annot, Var v)))
+        let new_ite = substitute_var v (annot1, Var newvar) (annot, expr) in
+        let lambda_type = t in
+        let abs = (annot2, InfLambda (lambda_type, newvar, new_ite)) in
+        (annot4, App (abs, (annot3, Var v)))
       in
       let free_vars = (List.of_seq (VarIdSet.to_seq (fv (annot, expr)))) in
-      let (_, ret) = List.fold_left abstract_var (annot, expr) free_vars
-      in ret
-    | App (e1, e2) -> App (aux e1, aux e2)
+      List.fold_left abstract_var (annot, expr) free_vars
+    | App (e1, e2) -> (annot, App (aux e1, aux e2))
     | Let (v, e1, e2) -> assert false
-    | Pair (e1, e2) -> Pair (aux e1, aux e2)
-    | Projection (p, e) -> Projection (p, aux e)
+    | Pair (e1, e2) -> (annot, Pair (aux e1, aux e2))
+    | Projection (p, e) -> (annot, Projection (p, aux e))
     | RecordUpdate (e1, l, e2) ->
-        RecordUpdate (aux e1, l, Utils.option_map aux e2)
-    | Debug (str, e) -> Debug (str, aux e)
-    in
-    (annot, expr')
+        (annot, RecordUpdate (aux e1, l, Utils.option_map aux e2))
+    | Debug (str, e) -> (annot, Debug (str, aux e))
   in
   aux aexpr
