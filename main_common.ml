@@ -2,11 +2,9 @@ open Cduce
 open Ast
 open Types_additions
 open Checker
-open IO
 
-let type_check_string
-  str (pr:string -> unit) pr_logs pr_ill_typed =
-  let program = parse_program_string str in
+let type_check_program
+  (program:Ast.parser_program) (pr:string -> unit) pr_logs pr_ill_typed =
   let test_def (tenv,idm,env) (name,parsed_expr) =
     Format.ksprintf pr "%s: " name;
     begin try

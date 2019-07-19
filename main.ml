@@ -1,4 +1,5 @@
 open Checker
+open IO
 open Main_common
 
 let print_logs () =
@@ -15,4 +16,4 @@ let print_ill_typed (pos, str) =
 let _ =
     let fn = ref "test.ml" in
     if Array.length Sys.argv > 1 then fn := Sys.argv.(1) ;
-    type_check_string (!fn) (print_string) print_logs print_ill_typed
+    type_check_program (parse_program_file !fn) print_string print_logs print_ill_typed

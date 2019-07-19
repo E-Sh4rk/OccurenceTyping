@@ -1,5 +1,6 @@
 open Checker
 open Main_common
+open IO
 open Js_of_ocaml
 
 let pr str =
@@ -33,5 +34,5 @@ let _ =
          match Dom_html.getElementById_coerce "code" Dom_html.CoerceTo.textarea with
          None -> Js._true
          | Some textArea ->  let txt = textArea##.value in
-           type_check_string (Js.to_string txt) pr print_logs print_ill_typed;  Js._true)
+           type_check_program (parse_program_string (Js.to_string txt)) pr print_logs print_ill_typed;  Js._true)
     ) Js._false
