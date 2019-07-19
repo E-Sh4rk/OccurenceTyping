@@ -64,6 +64,8 @@ module Expr : sig
     val equiv : t -> t -> bool
 end
 module ExprMap : Map.S with type key = expr
+module VarIdMap : Map.S with type key = varid
+module VarIdSet : Set.S with type elt = varid
 
 type id_map = int StrMap.t
 val empty_id_map : id_map
@@ -79,8 +81,7 @@ val new_annot : Position.t -> annotation
 val parser_expr_to_annot_expr : type_env -> id_map -> parser_expr -> annot_expr
 
 val unannot : annot_expr -> expr
-
-val substitute_var : 'a -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t -> ('c, 'b, 'a) t
+val fv : annot_expr -> VarIdSet.t
 
 val const_to_typ : const -> typ
 

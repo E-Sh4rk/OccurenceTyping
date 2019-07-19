@@ -44,6 +44,12 @@ module Expr = struct
     let equiv t1 t2 = (compare t1 t2) = 0
 end
 module ExprMap = Map.Make(Expr)
+module VarId = struct
+    type t = varid
+    let compare = compare
+end
+module VarIdMap = Map.Make(VarId)
+module VarIdSet = Set.Make(VarId)
 
 type id_map = int StrMap.t
 
@@ -128,28 +134,24 @@ let rec unannot (_,e) =
     in
     ( (), e )
 
-let rec substitute_var v ve (a,e) =
-    let e = match e with
-    | Const c -> Const c
-    | Var v' when v=v' -> snd ve
-    | Var v' -> Var v'
-    | Lambda (t, v', e) when v=v' -> Lambda (t, v', e)
-    | Lambda (t, v', e) -> Lambda (t, v', substitute_var v ve e)
-    | RecLambda (s, t, v', e) when v=v' || v=s -> RecLambda (s, t, v', e)
-    | RecLambda (s, t, v', e) -> RecLambda (s, t, v', substitute_var v ve e)
-    | InfLambda (t, v', e) when v=v' -> InfLambda (t, v', e)
-    | InfLambda (t, v', e) -> InfLambda (t, v', substitute_var v ve e)
-    | Ite (e, t, e1, e2) -> Ite (substitute_var v ve e, t, substitute_var v ve e1, substitute_var v ve e2)
-    | App (e1, e2) -> App (substitute_var v ve e1, substitute_var v ve e2)
-    | Let (v', e1, e2) when v=v' -> Let (v', substitute_var v ve e1, e2)
-    | Let (v', e1, e2) -> Let (v', substitute_var v ve e1, substitute_var v ve e2)
-    | Pair (e1, e2) -> Pair (substitute_var v ve e1, substitute_var v ve e2)
-    | Projection (p, e) -> Projection (p, substitute_var v ve e)
-    | RecordUpdate (e1, l, e2) ->
-        RecordUpdate (substitute_var v ve e1, l, Utils.option_map (substitute_var v ve) e2)
-    | Debug (str, e) -> Debug (str, substitute_var v ve e)
-    in
-    (a,e)
+let rec fv (annot, expr) =
+  match expr with
+  | Const c -> VarIdSet.empty
+  | Var v -> VarIdSet.singleton v
+  | Lambda (t, v, e) -> VarIdSet.remove v (fv e)
+  | RecLambda (s, t, v, e) -> VarIdSet.remove s (VarIdSet.remove v (fv e))
+  | InfLambda (t, v, e) -> VarIdSet.remove v (fv e)
+  | Ite (e, t, e1, e2) -> VarIdSet.union (VarIdSet.union (fv e) (fv e1)) (fv e2)
+  | App (e1, e2) -> VarIdSet.union (fv e1) (fv e2)
+  | Let (v, e1, e2) -> VarIdSet.union (fv e1) (VarIdSet.remove v (fv e2))
+  | Pair (e1, e2) -> VarIdSet.union (fv e1) (fv e2)
+  | Projection (p, e) -> fv e
+  | RecordUpdate (e1, l, e2) ->
+    begin match e2 with
+    | Some e2 -> VarIdSet.union (fv e1) (fv e2)
+    | None -> fv e1
+    end
+  | Debug (str, e) -> fv e
 
 let const_to_typ c =
     match c with

@@ -1,6 +1,7 @@
 open Cduce
 open Ast
 open Types_additions
+open Transform
 
 type dir =
     | LApp | RApp | LPair | RPair | PFst | PSnd | Dbg of string
@@ -247,6 +248,14 @@ and typeof_open self (env, e) =
             in
             out_t
         | Ite (e,t,e1,e2) ->
+            (* Transformations *)
+            let add_var (varenv:typ VarIdMap.t) (((),expr),t) =
+              match expr with
+              | Var v -> VarIdMap.add v t varenv
+              | _ -> varenv
+            in
+            let vars = List.fold_left add_var VarIdMap.empty (ExprMap.bindings env) in
+            let e = abstract_unabstracted_ite e vars in
             (* No need to check the type of e here: it is already checked in refine_env *)
             let env1 = refine_env env e t in
             let env2 = refine_env env e (neg t) in
