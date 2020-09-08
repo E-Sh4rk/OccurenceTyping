@@ -9,10 +9,20 @@
         white-space: pre;
       }
       #code {
-      background: black;
-      color: white;
-      font-family: monospace;
+		  background: black;
+		  color: white;
+		  font-family: monospace;
       }
+	  .error {
+      display: inline-block;
+      padding-left:15px;
+      color: red;
+	  }
+    .warning {
+      display: inline-block;
+      padding-left:15px;
+      color: orange;
+	  }
     </style>
   </head>
   <body>
@@ -29,6 +39,8 @@
         <option value="8">Example 8</option>
         <option value="9">Example 9</option>
         <option value="10">Example 10</option>
+		<option value="11">Fix-point combinator</option>
+		<option value="12">Examples from Tobin-Hochstadt and Felleisen [2010]</option>
       </select>
       <button id="checkButton">Typecheck</button>
     </div>
