@@ -29,8 +29,8 @@ eval `opam config env`
 git clone -b cduce-next git@gitlab.math.univ-paris-diderot.fr:cduce/cduce.git
 cd cduce
 sudo apt install m4
-opam install num js_of_ocaml js_of_ocaml-ppx js_of_ocaml-camlp4
-./configure  --without-pxp --without-expat --without-netclient --without-netstring --prefix=~/usr/local
+opam install num ulex js_of_ocaml js_of_ocaml-ppx js_of_ocaml-camlp4
+./configure --without-pxp --without-expat --without-netclient --without-netstring --prefix=~/usr/local
 make all
 make install
 cp lib/* ~/.opam/4.07.0/lib/cduce/
