@@ -19,13 +19,25 @@ let f = fun (x:Int|String) -> 0
 let example4 = fun (x:Any) ->
 	if x is Int then f x else if x is String then f x else 0
 
-let example5_7 = fun (x:Any) -> (fun (y:Any) -> if x is Int
-	then if y is String then plus x (strlen y) else 0
-	else 0)
+let is_string = fun (x:Any) ->
+    if x is String then true else false
+
+let is_int = fun (x:Any) ->
+    if x is Int then true else false
+
+let and_ = fun (x:Any) -> fun (y:Any) ->
+    if x is True then if y is True then true else false else false
+
+let example5 = fun (x:Any) -> fun (y:Any) ->
+    if and_ (is_int x) (is_string y) is True then plus x (strlen y) else 0
 
 let example6 = fun (x:String|Int) -> (fun (y:Any) -> if x is Int
 	then if y is String then plus x (strlen y) else strlen x
 	else strlen x)
+
+let example7 = fun (x:Any) -> (fun (y:Any) -> if x is Int
+	then if y is String then plus x (strlen y) else 0
+	else 0)
 
 let strnum = fun (x:Any) ->
 	if x is Int then true else
