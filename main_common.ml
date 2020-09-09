@@ -10,10 +10,12 @@ let type_check_program
     begin try
         let id = unique_varid () in
         let annot_expr = parser_expr_to_annot_expr tenv idm parsed_expr in
+        let time = Unix.gettimeofday () in 
         let typ = typeof env annot_expr in
+        let time = (Unix.gettimeofday ()) -. time in
         let idm = StrMap.add name id idm in
         let env = ExprMap.add ((), Var id) typ env in
-        Format.ksprintf pr "%s\n" (Cduce.string_of_type typ);
+        Format.ksprintf pr "%s (checked in %fs)\n" (Cduce.string_of_type typ) time;
         pr_logs () ; (idm, env)
       with Ill_typed (pos, str) ->
         pr_ill_typed (pos, str); (idm,env)
