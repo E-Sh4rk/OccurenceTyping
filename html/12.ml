@@ -31,7 +31,7 @@ let and_ = fun (x:Any) -> fun (y:Any) ->
 
 (* We implemented the "and" with the Boolean function above,
 in order to differentiate example 5 from example 7
-where the "and"is encoded with nested tests *)
+where the "and" is encoded with nested tests *)
 let example5 = fun (x:Any) -> fun (y:Any) ->
     if and_ (is_int x) (is_string y) is True then plus x (strlen y) else 0
 
