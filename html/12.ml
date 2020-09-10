@@ -29,8 +29,9 @@ let is_int = fun (x:Any) ->
 let and_ = fun (x:Any) -> fun (y:Any) ->
     if x is True then if y is True then true else false else false
 
-(* The 'and' is implemented with the boolean function defined above.
-   It can also be encoded with nested tests (see example 7). *)
+(* We implemented the "and" with the Boolean function above,
+in order to differentiate example 5 from example 7
+where the "and"is encoded with nested tests *)
 let example5 = fun (x:Any) -> fun (y:Any) ->
     if and_ (is_int x) (is_string y) is True then plus x (strlen y) else 0
 
@@ -39,7 +40,7 @@ let example6 = fun (x:String|Int) -> fun (y:Any) ->
 	if and_ (is_int x) (is_string y) is True
 	then plus x (strlen y) else strlen x
 
-(* This time, the 'and' is encoded with nested tests. *)
+(* Here, the 'and' is encoded with nested tests. *)
 let example7 = fun (x:Any) -> (fun (y:Any) -> if x is Int
 	then if y is String then plus x (strlen y) else 0
 	else 0)
