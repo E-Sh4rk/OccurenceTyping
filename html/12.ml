@@ -16,6 +16,7 @@ let example3 = fun (x:Record) ->
 
 let f = fun (x:Int|String) -> 0
 
+(* The 'or' is encoded with nested tests. *)
 let example4 = fun (x:Any) ->
 	if x is Int then f x else if x is String then f x else 0
 
@@ -28,13 +29,17 @@ let is_int = fun (x:Any) ->
 let and_ = fun (x:Any) -> fun (y:Any) ->
     if x is True then if y is True then true else false else false
 
+(* The 'and' is implemented with the boolean function defined above.
+   It can also be encoded with nested tests (see example 7). *)
 let example5 = fun (x:Any) -> fun (y:Any) ->
     if and_ (is_int x) (is_string y) is True then plus x (strlen y) else 0
 
-let example6 = fun (x:String|Int) -> (fun (y:Any) -> if x is Int
-	then if y is String then plus x (strlen y) else strlen x
-	else strlen x)
+(* This example is expected not to type. *)
+let example6 = fun (x:String|Int) -> fun (y:Any) ->
+	if and_ (is_int x) (is_string y) is True
+	then plus x (strlen y) else strlen x
 
+(* This time, the 'and' is encoded with nested tests. *)
 let example7 = fun (x:Any) -> (fun (y:Any) -> if x is Int
 	then if y is String then plus x (strlen y) else 0
 	else 0)
