@@ -175,7 +175,7 @@ and typeof_open self (env, e) =
 
     let pos = position_of_expr e in
 
-    let type_lambda (s,t,v,e) =
+    let type_lambda (s,t,v,e) = (* TODO: We should refine the type of the lamba abstraction (as in the InfLambda case) *)
         if subtype t arrow_any then
             let env = match s with
             | None -> env
@@ -322,7 +322,9 @@ and typeof_no_memo _ =
     let typeof = Utils.do_not_memoize typeof_open in
     fun env e -> typeof (env, e)
 
-(* TODO: Memoisation temporarily disabled because incompatible with InfLambda. Fix it. *)
+(* TODO: Memoisation temporarily disabled because incompatible with InfLambda. Fix it.
+Also, we must ensure the environment has no new data about a subexpression that could refine a larger expression
+(example: s new type for 'x' could refine the type of 'f x'). Alternatively, we could 'normalize' the environment after each test. *)
 (*and typeof_memo ht =
     let path_select (_,e) = identifier_of_expr e in
     let typeof = Utils.memoize typeof_open path_select ht in
