@@ -5,7 +5,7 @@ atom boolean
 atom undefined
 
 (* This prototype has no syntactic sugar for strings,
-so we declare it as an union of some fixed atoms (for concision).
+so we declare it as a union of some fixed atoms (for concision).
 It would work the same way with real strings. *)
 type String = Number | Character | Boolean | Undefined
 
