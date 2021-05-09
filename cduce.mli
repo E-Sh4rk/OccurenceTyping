@@ -1,5 +1,5 @@
 
-module CD = Cduce_lib
+module CD = Cduce_types
 
 type typ = CD.Types.t
 type node = CD.Types.Node.t
@@ -31,7 +31,7 @@ val cap : typ -> typ -> typ
 val diff : typ -> typ -> typ
 val neg : typ -> typ
 
-val mk_var : bool -> string -> typ
+(* val mk_var : bool -> string -> typ *)
 val mk_atom : string -> typ
 val mk_new_typ: unit -> node
 val define_typ: node -> typ -> unit

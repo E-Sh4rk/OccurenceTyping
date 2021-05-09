@@ -1,16 +1,39 @@
 
-module CD = Cduce_lib
+module CD = Cduce_types
+
+(* Force linking with Cduce_core.Builtin for nicer pretty printing *)
+let _Env = Cduce_core.Builtin.env
+
 module LabelSet = CD.Ident.LabelSet
 module LabelMap = CD.Ident.LabelMap
 
 type typ = CD.Types.t
 type node = CD.Types.Node.t
 
-let pp = CD.Types.Print.pp_type
-let printf = CD.Types.Print.printf
-let dump = CD.Types.Print.dump
-let string_of_type = CD.Types.Print.string_of_type
-let string_of_node = CD.Types.Print.string_of_node
+let simplify t = 
+  (* Some arrow type seem to be printed really badly (with redudant arrows)
+     when CDuce is used as a library. This is a workaround. *)
+  let cap_arrow = function [] -> CD.Types.Arrow.any
+    | (u, v) :: ll ->
+      List.fold_left (fun acc (u, v) -> CD.Types.(cap acc (arrow (cons u) (cons v))))
+    CD.Types.(arrow (cons u) (cons v)) ll     
+  in
+  let no_arrow = CD.Types.(diff t Arrow.any) in
+  let arrow = CD.Types.(cap t Arrow.any) in
+  let _, intf = CD.Types.Arrow.get arrow in 
+  List.fold_left (fun acc line ->
+      CD.Types.cup acc (cap_arrow line)
+    ) no_arrow intf
+
+
+let simplify = CD.Types.Cache.memo simplify
+
+let pp fmt t = 
+  CD.Types.Print.print fmt (simplify t)
+let printf t = Format.printf "%a" CD.Types.Print.print t
+let dump = CD.Types.dump
+let string_of_type t = Format.asprintf "%a" CD.Types.Print.print t
+let string_of_node t = Format.asprintf "%a" CD.Types.Print.print (CD.Types.descr t)
 let descr = CD.Types.descr
 let cons = CD.Types.cons
 
@@ -33,9 +56,11 @@ let from_label lbl = CD.Ident.Label.get_ascii lbl
 
 (* ----- *)
 
+(*
 let mk_var internal name =
     let var = CD.Var.mk ~internal:internal name in
     CD.Types.var var
+*)
 
 let mk_atom ascii_name =
     ascii_name |> CD.Atoms.V.mk_ascii |> CD.Atoms.atom |> CD.Types.atom
@@ -132,9 +157,9 @@ let dnf t =
 
 let true_typ = mk_atom "true"
 let false_typ = mk_atom "false"
-let bool_typ = cup true_typ false_typ
-let int_typ = CD.Types.Int.any
-let char_typ = CD.Types.Char.any
+let bool_typ = CD.Builtin_defs.bool
+let int_typ = CD.Builtin_defs.int
+let char_typ = CD.Builtin_defs.char
 let unit_typ = mk_atom "unit"
 
 let interval i1 i2 =

@@ -66,7 +66,7 @@ let set_logs e ld =
 
 (* ugly *)
 let inf_table = Hashtbl.create 23
-module TySet = Set.Make(Cduce_lib.Types)
+module TySet = Set.Make(CD.Types)
 
 let init_inf v =
   Hashtbl.replace inf_table v (true, TySet.empty)
@@ -82,7 +82,7 @@ let is_initial v =
   fst (Hashtbl.find inf_table v)
 
 let is_initial v =
-  try is_initial v with Not_found -> assert false
+  try is_initial v with Not_found -> (*assert false*) false
 
 let record_inf v t =
   if not (is_empty t) then

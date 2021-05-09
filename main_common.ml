@@ -15,7 +15,8 @@ let type_check_program
         let time = (Unix.gettimeofday ()) -. time in
         let idm = StrMap.add name id idm in
         let env = ExprMap.add ((), Var id) typ env in
-        Format.ksprintf pr "%s (checked in %fs)\n" (Cduce.string_of_type typ) time;
+        Format.ksprintf pr "%s (checked in %fs)\n\n"
+        (Cduce.string_of_type typ) time;
         pr_logs () ; (idm, env)
       with Ill_typed (pos, str) ->
         pr_ill_typed (pos, str); (idm,env)

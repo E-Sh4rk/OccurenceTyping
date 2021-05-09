@@ -1,12 +1,15 @@
+atom null
+type Object = Null | { prototype = Object ..}
+type ObjectWithPropertyL = { l = Any ..}
+  | { prototype = ObjectWithPropertyL ..}
 
-type X = X -> Any -> Empty
+let has_property_l = fun (o:Object) ->
+    if o is ObjectWithPropertyL then true else false
 
-(* Fix-point combinator *)
-let z = fun (((Any -> Empty) -> Any -> Empty ) -> (Any -> Empty)) f ->
-      let delta = fun ( X -> (Any -> Empty) ) x ->
-         f ( fun (Any -> Empty) v -> ( x x v ))
-       in delta delta
+let has_own_property_l = fun (o:Object) ->
+    if o is { l=Any ..} then true else false
 
-let id = fun ((Any -> Empty) -> (Any -> Empty)) x -> x
-
-let diverge = z id
+let get_property_l = fun (self:Object->Any) o ->
+    if has_own_property_l o is True then o.l
+    else if o is Null then null
+    else self (o.prototype)

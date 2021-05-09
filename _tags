@@ -1,3 +1,3 @@
-true: package(dynlink), package(camlp4.lib), package(ulex), \
-	package(unix), package(num), package(str), \
-	package(cduce), package(js_of_ocaml-ppx)
+true: package(dynlink), \
+	package(unix), package(num),  \
+	package(cduce-types),package(cduce.lib.core), package(js_of_ocaml-ppx)
