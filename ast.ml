@@ -165,6 +165,7 @@ let const_to_typ c =
     | Bool false -> Cduce.false_typ
     | Int i -> Cduce.interval (Some i) (Some i)
     | Char c -> Cduce.single_char c
+    | Atom "[]" -> Cduce.mk_atom "nil"
     | Atom t ->
         failwith (Printf.sprintf "Can't retrieve the type of the atom %s." t)
 

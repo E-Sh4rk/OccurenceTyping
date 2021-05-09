@@ -35,6 +35,9 @@ let type_expr_to_typ env t =
     let rec aux t =
         match t with
         | TBase tb -> cons (type_base_to_typ tb)
+        | TCustom "[]" -> cons (Cduce.mk_atom "nil")
+        | TCustom s when s <> "" && s.[0] = '\'' ->
+            cons (Cduce.single_char s.[1])
         | TCustom k ->
             (try StrMap.find k env with Not_found -> failwith (Printf.sprintf "Type %s undefined!" k))
         | TPair (t1,t2) -> cons (mk_times (aux t1) (aux t2))

@@ -29,6 +29,26 @@
   let annot sp ep e =
     (Ast.new_annot (Position.lex_join sp ep), e)
 
+  let str _sp ep s =
+    let prev_pos p = { p with Lexing.pos_cnum = p.Lexing.pos_cnum - 1 } in  
+    let accu = ref (annot (prev_pos ep) ep (var_or_primitive "[]")) in
+    let accp = ref (prev_pos ep) in
+    let an e =  annot (prev_pos !accp) !accp e in
+    for i = String.length s - 1 downto 0 do
+      accu := an (Pair((an (Const (Char s.[i]))), !accu));
+      accp := prev_pos !accp;
+    done;
+    !accu
+
+  let tstr s =
+    let accu = ref (TCustom "[]") in
+    let mks c = "'" ^ (String.make 1 c) in 
+    for i = String.length s - 1 downto 0 do
+      accu := TPair ((TCustom (mks s.[i])), !accu);
+    done;
+    !accu
+
+
 %}
 
 %token EOF
@@ -117,6 +137,7 @@ field_term:
 atomic_term:
   x=identifier { annot $startpos $endpos (var_or_primitive x) }
 | l=literal { annot $startpos $endpos (Const l) }
+| s=LSTRING { str $startpos $endpos s }
 | LBRACE fs=separated_list(COMMA, field_term) RBRACE
   { record_update (annot $startpos $endpos (Const EmptyRecord)) fs }
 | LPAREN ts=separated_nonempty_list(COMMA, term) RPAREN { tuple ts }
@@ -158,6 +179,7 @@ identifier: x=ID { x }
 
 typ:
   x=type_constant { TBase x }
+| s=LSTRING { tstr s }
 | s=TID { TCustom s }
 | lhs=typ ARROW rhs=typ { TArrow (lhs, rhs) }
 | LPAREN lhs=typ COMMA rhs=typ RPAREN { TPair (lhs, rhs) }

@@ -1,24 +1,15 @@
-let incr = fun (Int -> Int) x -> magic
-let charcode = fun (Char -> Int) x-> magic
-let int_of_bool = fun (Bool -> Int) x -> magic
+atom null
+type Object = Null | { prototype = Object ..}
+type ObjectWithPropertyL = { l = Any ..}
+  | { prototype = ObjectWithPropertyL ..}
 
+let has_property_l = fun (o:Object) ->
+    if o is ObjectWithPropertyL then true else false
 
-(* These define *)
-atom number
-atom character
-atom boolean
-atom undefined
+let has_own_property_l = fun (o:Object) ->
+    if o is { l=Any ..} then true else false
 
-type String = Number | Character | Boolean | Undefined
-
-let typeof = fun (x:Any) ->
-    if x is Int then number
-    else if x is Char then character
-    else if x is Bool then boolean
-    else undefined
-
-let test = fun (x:Any) ->
-    if typeof x is Number then incr x
-    else if typeof x is Character then charcode x
-    else if typeof x is Boolean then int_of_bool x
-    else 0
+let get_property_l = fun (self:Object->Any) o ->
+    if has_own_property_l o is True then o.l
+    else if o is Null then null
+    else self (o.prototype)

@@ -1,15 +1,16 @@
-atom null
-type Object = Null | { prototype = Object ..}
-type ObjectWithPropertyL = { l = Any ..}
-  | { prototype = ObjectWithPropertyL ..}
 
-let has_property_l = fun (o:Object) ->
-    if o is ObjectWithPropertyL then true else false
+let incr = fun (Int -> Int) x -> magic
+let charcode = fun (Char -> Int) x-> magic
+let int_of_bool = fun (Bool -> Int) x -> magic
 
-let has_own_property_l = fun (o:Object) ->
-    if o is { l=Any ..} then true else false
+let typeof = fun (x:Any) ->
+    if x is Int then "number"
+    else if x is Char then "string"
+    else if x is Bool then "boolean"
+    else "object"
 
-let get_property_l = fun (self:Object->Any) o ->
-    if has_own_property_l o is True then o.l
-    else if o is Null then null
-    else self (o.prototype)
+let test = fun (x:Any) ->
+    if typeof x is "number" then incr x
+    else if typeof x is "string" then charcode x
+    else if typeof x is "boolean" then int_of_bool x
+    else 0

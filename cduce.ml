@@ -13,13 +13,13 @@ type node = CD.Types.Node.t
 let simplify t = 
   (* Some arrow type seem to be printed really badly (with redudant arrows)
      when CDuce is used as a library. This is a workaround. *)
-  let cap_arrow = function [] -> CD.Types.Arrow.any
+  let cap_arrow = function [] -> CD.Types.Function.any
     | (u, v) :: ll ->
       List.fold_left (fun acc (u, v) -> CD.Types.(cap acc (arrow (cons u) (cons v))))
     CD.Types.(arrow (cons u) (cons v)) ll     
   in
-  let no_arrow = CD.Types.(diff t Arrow.any) in
-  let arrow = CD.Types.(cap t Arrow.any) in
+  let no_arrow = CD.Types.(diff t Function.any) in
+  let arrow = CD.Types.(cap t Function.any) in
   let _, intf = CD.Types.Arrow.get arrow in 
   List.fold_left (fun acc line ->
       CD.Types.cup acc (cap_arrow line)
@@ -40,8 +40,8 @@ let cons = CD.Types.cons
 
 let any = CD.Types.any
 let empty = CD.Types.empty
-let any_node = CD.Types.any_node
-let empty_node = CD.Types.empty_node
+let any_node = cons any
+let empty_node = cons empty
 
 
 let cup = CD.Types.cup
@@ -63,7 +63,7 @@ let mk_var internal name =
 *)
 
 let mk_atom ascii_name =
-    ascii_name |> CD.Atoms.V.mk_ascii |> CD.Atoms.atom |> CD.Types.atom
+    ascii_name |> CD.AtomSet.V.mk_ascii |> CD.AtomSet.atom |> CD.Types.atom
 
 (*
 let mk_list alpha =
@@ -86,7 +86,7 @@ let normalize_typ = CD.Types.normalize
 
 let mk_times = CD.Types.times
 
-let pair_any = CD.Types.Product.any
+let pair_any = CD.Types.Times.any
 
 let pi1 t =
   CD.Types.Product.pi1 (CD.Types.Product.get t)
@@ -100,16 +100,14 @@ let mk_record is_open fields =
   let fields = LabelMap.from_list_disj fields in
   CD.Types.record_fields (is_open, fields)
 
-let record_any = CD.Types.Record.any
+let record_any = CD.Types.Rec.any
 
-let absent = CD.Types.Record.absent
+let absent = CD.Types.Absent.any
 
 let any_or_absent = CD.Types.Record.any_or_absent
 
-let absent_node = CD.Types.Record.absent_node
-
-let any_or_absent_node = CD.Types.Record.any_or_absent_node
-
+let absent_node = cons absent
+let any_or_absent_node = cons any_or_absent
 let or_absent = CD.Types.Record.or_absent
 
 let empty_closed_record = CD.Types.empty_closed_record
@@ -119,8 +117,17 @@ let empty_open_record = CD.Types.empty_open_record
 let get_field record field =
   CD.Types.Record.project record (to_label field)
 
+let all_labels r =
+  let accu = ref CD.Ident.LabelSet.empty in
+  List.iter (fun (fields, _, _) ->
+    CD.Ident.LabelMap.iteri (fun i _ -> 
+      accu := CD.Ident.LabelSet.add i !accu) fields    
+    ) (CD.Types.Record.get r);
+    !accu
+
+
 let all_fields record =
-  let lbls = CD.Types.Record.all_labels record in
+  let lbls = all_labels record in
   List.map from_label (LabelSet.get lbls)
 
 let merge_records = CD.Types.Record.merge
@@ -139,7 +146,7 @@ let equiv = CD.Types.equiv
 (* Maybe not optimised (if no memoisation for Arrow.get). We'll see that later. *)
 let mk_arrow = CD.Types.arrow
 
-let arrow_any = CD.Types.Arrow.any
+let arrow_any = CD.Types.Function.any
 
 let domain t =
     if subtype t arrow_any then
@@ -181,6 +188,6 @@ let interval i1 i2 =
     CD.Types.Int.any
     
 let single_char c =
-  let c = CD.Chars.V.mk_char c in
-  let c = CD.Chars.atom c in
+  let c = CD.CharSet.V.mk_char c in
+  let c = CD.CharSet.atom c in
   CD.Types.char c
