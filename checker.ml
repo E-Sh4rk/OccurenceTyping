@@ -9,7 +9,7 @@ type dir =
 
 type path = dir list
 
-let n0 = ref 10
+let n0 = ref 1
 let global_n0 () = !n0
 let set_global_n0 n = n0 := n
 

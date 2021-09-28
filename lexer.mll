@@ -27,6 +27,7 @@ let string = '"' ['a'-'z''A'-'Z''0'-'9''_'' ''-']* '"'
 rule token = parse
 | newline { enter_newline lexbuf |> token }
 | blank   { token lexbuf }
+| "#"     { HASH }
 | "atoms" { ATOMS }
 | "atom"  { ATOMS }
 | "type"  { TYPE }

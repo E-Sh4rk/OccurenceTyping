@@ -51,7 +51,7 @@
 
 %}
 
-%token EOF
+%token EOF HASH
 %token FUN LET IN FST SND DEBUG
 %token IF IS THEN ELSE
 %token LPAREN RPAREN EQUAL COMMA COLON
@@ -101,11 +101,13 @@ unique_term: t=term EOF { t }
   parsing_error (Position.lex_join $startpos $endpos) "Syntax error."
 }
 
-
 element:
   a=definition { Definition a }
 | a=atoms      { Atoms a }
 | a=types_def  { Types a }
+| a=meta       { Meta a }
+
+%inline meta: HASH id=identifier EQUAL i=LINT { (id, i) }
 
 atoms: ATOMS a=ID* { a }
 

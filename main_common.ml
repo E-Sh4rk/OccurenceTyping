@@ -34,5 +34,9 @@ let type_check_program
       | Types lst ->
         let tenv = define_types tenv lst in
         (tenv,idm,env)
+      | Meta (id, v) ->
+        if id <> "nzero" then failwith ("Undefined meta command "^id)
+        else Checker.set_global_n0 v ;
+        (tenv,idm,env)
     in
     ignore (List.fold_left treat_elem (empty_tenv, empty_id_map, empty_env) program)

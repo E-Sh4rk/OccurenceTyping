@@ -173,5 +173,6 @@ type parser_element =
 | Definition of (string * parser_expr)
 | Atoms of string list
 | Types of (string * type_expr) list
+| Meta of (string * int)
 
 type parser_program = parser_element list
